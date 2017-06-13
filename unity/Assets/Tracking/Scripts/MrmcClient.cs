@@ -6,8 +6,8 @@ public class MrmcClient : MonoBehaviour
 {
     public int PackSize = 0;
     public int PackCount = 0;
-    
-    public Camera targetCamera = null;
+
+    public Camera mainCamera = null;
 
     public Tracking.Mrmc.Config config;
     private Tracking.RingBuffer<Tracking.Mrmc.Packet> ringBuffer;
@@ -46,10 +46,13 @@ public class MrmcClient : MonoBehaviour
 
         // Try to load a configuration file
         // If didn't find a config file, create a default
-#if !UNITY_EDITOR
+#if true //!UNITY_EDITOR
         if (!netReader.Config.Load(ConfigFile))
             netReader.Config.Save(ConfigFile); 
 #endif
+
+        if (mainCamera == null)
+            mainCamera = Camera.main;
 
         netReader.Connect(config, ringBuffer);
         ringBuffer.ResetDrops();
@@ -75,9 +78,8 @@ public class MrmcClient : MonoBehaviour
 
     void UpdateCameras()
     {
-    	targetCamera.transform.localPosition = netReader.Buffer.Packet.Position;
-        Vector3 target = netReader.Buffer.Packet.Target;
-        
+        mainCamera.transform.localPosition = netReader.Buffer.Packet.Position;
+        mainCamera.transform.LookAt(netReader.Buffer.Packet.Target);
     }
 
 }
