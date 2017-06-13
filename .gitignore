@@ -23,6 +23,7 @@ unity/.vs/
 unity/Library/
 unity/Temp/UnityLockfile
 unity/Temp/
+unity/obj/
 csharp/Tracking/obj/
 unity/unity.v12.suo
 release/
@@ -30,3 +31,4 @@ cpp/Xcito/build/bin/
 cpp/Xcito/build/tmp/
 *.sdf
 *.suo
+unity/unity.sln
