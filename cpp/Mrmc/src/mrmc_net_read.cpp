@@ -26,14 +26,20 @@ public:
 
 	void handle_receive(const boost::system::error_code& error, size_t bytes_transferred)
 	{
-		std::cout << "[" << bytes_transferred << " bytes] received : ";
+		std::cout << "\n[" << bytes_transferred << " bytes] received : ";
 
-		float float_buff[11];
-		memcpy(&float_buff[0], &recv_buffer[0], bytes_transferred);
+		if (bytes_transferred == 44)
+		{
+			float float_buff[11];
+			memcpy(&float_buff[0], &recv_buffer[0], bytes_transferred);
 
-		for (int i = 0; i < 11; i++)
-			std::cout << float_buff[i] << " ";
-		std::cout << std::endl;
+			for (int i = 0; i < 11; i++)
+				std::cout << std::fixed << float_buff[i] << " ";
+			std::cout << std::endl;
+		}
+		else
+			for (int i = 0; i < bytes_transferred; ++i)
+				std::cout << recv_buffer[i];
 
 		if (!error || error == boost::asio::error::message_size)
 			start_receive();
