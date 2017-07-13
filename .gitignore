@@ -34,3 +34,5 @@ cpp/Xcito/build/tmp/
 unity/unity.sln
 cpp/Mrmc/msvc/mrmc_net.VC.db
 cpp/Mrmc/msvc/tmp/
+cpp/Mrmc/msvc/bin/
+unity/unity.csproj

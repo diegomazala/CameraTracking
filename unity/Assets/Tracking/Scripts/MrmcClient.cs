@@ -14,6 +14,15 @@ public class MrmcClient : MonoBehaviour
     public Tracking.NetReader<Tracking.Mrmc.Packet> netReader = null;
 
 
+    public float Zoom;
+    public float Focus;
+
+    public Vector3 Pos;
+    public Vector3 Target;
+
+    public bool isValid;
+
+    public Transform target;
 
     public static string ConfigFile
     {
@@ -77,9 +86,34 @@ public class MrmcClient : MonoBehaviour
 
 
     void UpdateCameras()
-    {
-        mainCamera.transform.localPosition = netReader.Buffer.Packet.Position;
-        mainCamera.transform.LookAt(netReader.Buffer.Packet.Target);
+    { 
+        float pos_x = netReader.Buffer.Packet.Position.x;
+        float pos_y = netReader.Buffer.Packet.Position.y;
+        float pos_z = netReader.Buffer.Packet.Position.z;
+
+        float t_x = netReader.Buffer.Packet.Target.x;
+        float t_y = netReader.Buffer.Packet.Target.y;
+        float t_z = netReader.Buffer.Packet.Target.z;
+
+
+        // BOLT
+        //mainCamera.transform.localPosition = new Vector3(pos_y, pos_z, pos_x);
+
+        // MILO
+        mainCamera.transform.localPosition = new Vector3(pos_x, pos_z, pos_y);
+        target.position = new Vector3(t_x, t_z, t_y);
+        mainCamera.transform.LookAt(new Vector3(t_x, t_z, t_y));
+
+        
+
+
+        Zoom = netReader.Buffer.Packet.Zoom;
+        Focus = netReader.Buffer.Packet.Focus;
+
+        Pos = netReader.Buffer.Packet.Position;
+        Target = netReader.Buffer.Packet.Target;
+
+        isValid = netReader.Buffer.Packet.IsValid;
     }
 
 }

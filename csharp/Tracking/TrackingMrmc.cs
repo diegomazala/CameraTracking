@@ -53,6 +53,7 @@ public class TrackingMrmc
             System.Console.WriteLine("View        : {0}", packet.Position.ToString());
             System.Console.WriteLine("Target      : {0}", packet.Target.ToString());
             System.Console.WriteLine("Zoom, Focus : {0}, {1}", packet.Zoom, packet.Focus);
+            System.Console.WriteLine("Is Valid    : {0}", packet.IsValid);
             System.Console.WriteLine();
         }
         System.Console.WriteLine("\n---------------------------------------------------");
