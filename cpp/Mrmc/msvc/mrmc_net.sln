@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrmc_net_read", "mrmc_net_r
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrmc_net_write", "mrmc_net_write.vcxproj", "{5B34DC70-56A3-408B-8EF6-E428697E9990}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrmc_net_command", "mrmc_net_command.vcxproj", "{07F013EF-00D6-4F8B-98BF-43F96A2B67D9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,10 @@ Global
 		{5B34DC70-56A3-408B-8EF6-E428697E9990}.Debug|x64.Build.0 = Debug|x64
 		{5B34DC70-56A3-408B-8EF6-E428697E9990}.Release|x64.ActiveCfg = Release|x64
 		{5B34DC70-56A3-408B-8EF6-E428697E9990}.Release|x64.Build.0 = Release|x64
+		{07F013EF-00D6-4F8B-98BF-43F96A2B67D9}.Debug|x64.ActiveCfg = Debug|x64
+		{07F013EF-00D6-4F8B-98BF-43F96A2B67D9}.Debug|x64.Build.0 = Debug|x64
+		{07F013EF-00D6-4F8B-98BF-43F96A2B67D9}.Release|x64.ActiveCfg = Release|x64
+		{07F013EF-00D6-4F8B-98BF-43F96A2B67D9}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
