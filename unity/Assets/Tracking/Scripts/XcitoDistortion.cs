@@ -31,11 +31,6 @@ public class XcitoDistortion : MonoBehaviour
 
     void OnEnable()
     {
-        if (!SystemInfo.supportsRenderTextures)
-        {
-            enabled = false;
-            return;
-        }
 
         // Disable if we don't support image effects
         if (!SystemInfo.supportsImageEffects)
