@@ -25,6 +25,8 @@ public class MrmcWindow : EditorWindow
     Texture nextTex;
     int frameNumber = 0;
 
+    MrmcTcpClient tcpClient = new MrmcTcpClient();
+
     [MenuItem("Window/M.R.M.C.")]
     public static void ShowWindow()
     {
@@ -48,6 +50,7 @@ public class MrmcWindow : EditorWindow
             if (GUILayout.Button(playTex, layoutOptions))
             {
                 Plugin.MrmcPlay();
+                tcpClient.Send();
             }
 
             frameNumber = EditorGUILayout.IntField(frameNumber, GUILayout.Width(50), GUILayout.Height(30));
