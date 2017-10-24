@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrmc_net_write", "mrmc_net_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrmc_flair_remote", "mrmc_flair_remote.vcxproj", "{30104D64-3847-482B-9A07-4CC0F9FB07C1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrmc_flair_emulator", "mrmc_flair_emulator.vcxproj", "{66156B3E-8093-4421-83D5-930FFBE04307}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -45,6 +47,10 @@ Global
 		{30104D64-3847-482B-9A07-4CC0F9FB07C1}.Debug|x64.Build.0 = Debug|x64
 		{30104D64-3847-482B-9A07-4CC0F9FB07C1}.Release|x64.ActiveCfg = Release|x64
 		{30104D64-3847-482B-9A07-4CC0F9FB07C1}.Release|x64.Build.0 = Release|x64
+		{66156B3E-8093-4421-83D5-930FFBE04307}.Debug|x64.ActiveCfg = Debug|x64
+		{66156B3E-8093-4421-83D5-930FFBE04307}.Debug|x64.Build.0 = Debug|x64
+		{66156B3E-8093-4421-83D5-930FFBE04307}.Release|x64.ActiveCfg = Release|x64
+		{66156B3E-8093-4421-83D5-930FFBE04307}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

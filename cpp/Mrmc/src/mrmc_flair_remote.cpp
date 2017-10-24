@@ -20,8 +20,6 @@
 
 using boost::asio::ip::tcp;
 
-enum { max_length = 1024 };
-
 #define API_DATA_LEN	16
 #define API_MARKER		0xABCF
 
@@ -74,7 +72,7 @@ int main(int argc, char* argv[])
 			dataSent.major = 1;
 			dataSent.minor = 2;
 			dataSent.length = 3;
-			dataSent.bWrite = *std::to_string(i).c_str() + '0';
+			dataSent.bWrite = API_MARKER;
 			dataSent.number = 4;
 			dataSent.error = 5;
 
@@ -96,6 +94,7 @@ int main(int argc, char* argv[])
 
 			std::this_thread::sleep_for(1s);
 
+			// Receiving back
 			ApiData dataReceived;
 			
 			size_t reply_length = boost::asio::read(s, boost::asio::buffer(&dataReceived, request_length));
@@ -108,9 +107,8 @@ int main(int argc, char* argv[])
 				std::cout << dataReceived.data[j] << ' ';
 			std::cout << std::endl << std::endl;
 						
-
-			
 			std::this_thread::sleep_for(1s);
+
 		}
 	}
 	catch (std::exception& e)
