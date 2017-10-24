@@ -12,6 +12,7 @@
 #include <cstring>
 #include <iostream>
 #include <thread>
+#include <cstdlib>
 #include <boost/asio.hpp>
 
 #include <conio.h> 
@@ -29,7 +30,7 @@ typedef struct
 	unsigned short	major;
 	unsigned short	minor;
 	unsigned short	length;
-	unsigned char	bWrite;
+	unsigned char	bWrite = API_MARKER;
 	short			number;
 	short			error;
 	int				checksum;
@@ -37,6 +38,90 @@ typedef struct
 	float			data[API_DATA_LEN];
 } ApiData;
 
+
+ApiData dataSent;
+ApiData dataReceived;
+
+void printMenu()
+{
+	std::cout
+		<< "Menu: " << std::endl
+		<< "[ p ]   = Play" << std::endl
+		<< "[ s ]   = Stop" << std::endl
+		<< "[ g ]   = Goto" << std::endl
+		<< "[ esc ] = Exit" << std::endl;
+}
+
+void printData(const ApiData& data)
+{
+	std::cout
+		<< data.marker << ' ' << data.major << ' ' << data.minor << ' '
+		<< data.length << ' ' << data.bWrite << ' ' << data.number << ' '
+		<< data.error << '\t';
+	for (int j = 0; j < API_DATA_LEN; ++j)
+		std::cout << data.data[j] << ' ';
+	std::cout << std::endl << std::endl;
+}
+
+void play()
+{
+	dataSent.marker = 43983;
+	dataSent.major = 1;
+	dataSent.minor = 1;
+}
+
+void stop()
+{
+	dataSent.marker = 43983;
+	dataSent.major = 1;
+	dataSent.minor = 0;
+}
+
+void go()
+{
+	dataSent.marker = 43983;
+	dataSent.major = 1;
+	dataSent.minor = 5;
+}
+
+bool get_key_command()
+{
+	bool command = true;
+	int key = getch();
+
+	switch (key)
+	{
+		case 112:	// p
+		case 80:	// P
+			play();
+			break;
+
+		case 115:	// s
+		case 83:	// S
+			stop();
+			break;
+
+		case 103:	// g
+		case 71:	// G
+			go();
+			break;
+
+		case 113:	// q
+		case 81:	// Q
+		case 120:	// x
+		case 88:	// X
+		case 27:	// esc
+			std::exit(EXIT_SUCCESS);
+			break;
+
+		default:
+			printMenu();
+			command = false;
+			break;
+	}
+	
+	return command;
+}
 
 int main(int argc, char* argv[])
 {
@@ -64,51 +149,22 @@ int main(int argc, char* argv[])
 		tcp::resolver resolver(io_service);
 		boost::asio::connect(s, resolver.resolve({ host_address, port }));
 
-		for(int i=0; i<5; ++i)
+		while(true)
 		{
+			if (get_key_command())
+			{
+				std::cout << "Sent to server   : ";
+				printData(dataSent);
 
-			ApiData dataSent;
-			dataSent.marker = i;
-			dataSent.major = 1;
-			dataSent.minor = 2;
-			dataSent.length = 3;
-			dataSent.bWrite = API_MARKER;
-			dataSent.number = 4;
-			dataSent.error = 5;
+				// Sending
+				size_t request_length = sizeof(dataSent);
+				boost::asio::write(s, boost::asio::buffer(&dataSent, request_length));
 
-			for (int j = 0; j < API_DATA_LEN; ++j)
-				dataSent.data[j] = j * i + j;
-
-			std::cout
-				<< "Send to server   : "
-				<< dataSent.marker << ' ' << dataSent.major << ' ' << dataSent.minor << ' '
-				<< dataSent.length << ' ' << dataSent.bWrite << ' ' << dataSent.number << ' '
-				<< dataSent.error << '\t';
-			for (int j = 0; j < API_DATA_LEN; ++j)
-				std::cout << dataSent.data[j] << ' ';
-			std::cout << std::endl;
-
-			size_t request_length = sizeof(dataSent);
-			boost::asio::write(s, boost::asio::buffer(&dataSent, request_length));
-
-
-			std::this_thread::sleep_for(1s);
-
-			// Receiving back
-			ApiData dataReceived;
-			
-			size_t reply_length = boost::asio::read(s, boost::asio::buffer(&dataReceived, request_length));
-			std::cout 
-				<< "Reply from server: "
-				<< dataReceived.marker << ' ' << dataReceived.major << ' ' << dataReceived.minor << ' '
-				<< dataReceived.length << ' ' << dataReceived.bWrite << ' ' << dataReceived.number << ' '
-				<< dataReceived.error << '\t';
-			for (int j = 0; j < API_DATA_LEN; ++j)
-				std::cout << dataReceived.data[j] << ' ';
-			std::cout << std::endl << std::endl;
-						
-			std::this_thread::sleep_for(1s);
-
+				// Receiving back
+				size_t reply_length = boost::asio::read(s, boost::asio::buffer(&dataReceived, request_length));
+				std::cout << "Reply from server: ";
+				printData(dataReceived);
+			}
 		}
 	}
 	catch (std::exception& e)
