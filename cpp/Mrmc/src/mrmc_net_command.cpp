@@ -12,7 +12,7 @@ extern "C"
 	}
 
 	DllExport void MrmcStop()
-	{
+	{	
 		MessageBox(NULL, "Stop Button\n", NULL, NULL);
 	}
 

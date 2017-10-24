@@ -17,6 +17,7 @@
     <ProjectGuid>{7BFA401B-AC58-4C71-8F8C-30459C843875}</ProjectGuid>
     <RootNamespace>mrmc_tcp_server</RootNamespace>
     <Keyword>mrmc_tcp_server</Keyword>
+    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">

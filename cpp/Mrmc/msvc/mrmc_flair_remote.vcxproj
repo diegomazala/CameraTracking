@@ -11,12 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\mrmc_net_write.cpp" />
+    <ClCompile Include="..\src\mrmc_flair_remote.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{5B34DC70-56A3-408B-8EF6-E428697E9990}</ProjectGuid>
-    <RootNamespace>mrmc_net_write</RootNamespace>
-    <Keyword>mrmc_net_write</Keyword>
+    <ProjectGuid>{30104D64-3847-482B-9A07-4CC0F9FB07C1}</ProjectGuid>
+    <RootNamespace>mrmc_flair_remote</RootNamespace>
+    <Keyword>mrmc_flair_remote</Keyword>
     <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

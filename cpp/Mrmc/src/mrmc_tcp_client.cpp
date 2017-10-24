@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 	try
 	{
 		std::string host_address = "127.0.0.1";
-		std::string port = "12345";
+		std::string port = "53025";
 
 		if (argc != 3)
 		{
