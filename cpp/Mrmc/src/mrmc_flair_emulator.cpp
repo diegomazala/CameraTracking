@@ -50,7 +50,7 @@ void session(tcp::socket sock)
 				<< "Major  : " << dataReceived.major << std::endl
 				<< "Minor  : " << dataReceived.minor << std::endl
 				<< "Length : " << dataReceived.length << std::endl
-				<< "bWrite : " << dataReceived.bWrite << ' ' << ((dataReceived.bWrite == API_MARKER) ? " [marker ok]" : " marker invalid") << std::endl
+				<< "bWrite : " << (int)(dataReceived.bWrite) << ' ' << (char)(dataReceived.bWrite) << std::endl
 				<< "Number : " << dataReceived.number << std::endl
 				<< "Error  : " << dataReceived.error << std::endl
 				<< "Data   : " << std::defaultfloat;

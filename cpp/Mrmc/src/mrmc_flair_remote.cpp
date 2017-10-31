@@ -26,11 +26,11 @@ using boost::asio::ip::tcp;
 
 typedef struct
 {
-	unsigned short	marker;
+	unsigned short	marker = API_MARKER;
 	unsigned short	major;
 	unsigned short	minor;
 	unsigned short	length;
-	unsigned char	bWrite = API_MARKER;
+	unsigned char	bWrite = TRUE;
 	short			number;
 	short			error;
 	int				checksum;
@@ -48,7 +48,15 @@ void printMenu()
 		<< "Menu: " << std::endl
 		<< "[ p ]   = Play" << std::endl
 		<< "[ s ]   = Stop" << std::endl
+		<< "[ c ]   = Goto Clear" << std::endl
 		<< "[ g ]   = Goto" << std::endl
+		<< "[ 1 ]   = Goto Position 1" << std::endl
+		<< "[ 2 ]   = Goto Position 2" << std::endl
+		<< "[ 3 ]   = Goto Position 3" << std::endl
+		<< "[ 2 ]   = Goto Frame 5" << std::endl
+		<< "[ f ]   = Fwd Run" << std::endl
+		<< "[ b ]   = Bck Run" << std::endl
+		<< "[ w ]   = bWrite" << std::endl
 		<< "[ esc ] = Exit" << std::endl;
 }
 
@@ -56,7 +64,7 @@ void printData(const ApiData& data)
 {
 	std::cout
 		<< data.marker << ' ' << data.major << ' ' << data.minor << ' '
-		<< data.length << ' ' << data.bWrite << ' ' << data.number << ' '
+		<< data.length << ' ' << (int)(data.bWrite) << ' ' << data.number << ' '
 		<< data.error << '\t';
 	for (int j = 0; j < API_DATA_LEN; ++j)
 		std::cout << data.data[j] << ' ';
@@ -84,6 +92,59 @@ void go()
 	dataSent.minor = 5;
 }
 
+
+void fwd()
+{
+	dataSent.marker = 43983;
+	dataSent.major = 1;
+	dataSent.minor = 2;
+}
+
+
+void bck()
+{
+	dataSent.marker = 43983;
+	dataSent.major = 1;
+	dataSent.minor = 3;
+}
+
+
+void go_clear()
+{
+	dataSent.marker = 43983;
+	dataSent.major = 2;
+	dataSent.minor = 2;
+}
+
+
+void go_frame(int frame_index)
+{
+	dataSent.marker = 43983;
+	dataSent.major = 2;
+	dataSent.minor = 0;
+	dataSent.length = frame_index;
+	dataSent.number = frame_index;
+	dataSent.data[0] = frame_index;
+}
+
+void go_position(int pos_index)
+{
+	dataSent.marker = 43983;
+	dataSent.major = 2;
+	dataSent.minor = 1;
+	dataSent.length = pos_index;
+	dataSent.number = pos_index;
+	dataSent.data[0] = pos_index;
+}
+
+void write()
+{
+	if (dataSent.bWrite == TRUE)
+		dataSent.bWrite = FALSE;
+	else
+		dataSent.bWrite = TRUE;
+}
+
 bool get_key_command()
 {
 	bool command = true;
@@ -101,9 +162,46 @@ bool get_key_command()
 			stop();
 			break;
 
+		case 102:	// f
+		case 70:	// F
+			fwd();
+			break;
+
+		case 98:	// b
+		case 66:	// B
+			bck();
+			break;
+
+		case 99:	// c
+		case 67:	// C
+			go_clear();
+			break;
+
+		case 49:	// 1
+			go_position(1);
+			break;
+
+		case 50:	// 2
+			go_position(2);
+			break;
+
+		case 51:	// 3
+			go_position(3);
+			break;
+
+		case 53:	// 5
+			go_frame(50);
+			break;
+
 		case 103:	// g
 		case 71:	// G
 			go();
+			break;
+
+		case 119:	// w
+		case 87:	// W
+			write();
+			printData(dataSent);
 			break;
 
 		case 113:	// q
@@ -160,10 +258,10 @@ int main(int argc, char* argv[])
 				size_t request_length = sizeof(dataSent);
 				boost::asio::write(s, boost::asio::buffer(&dataSent, request_length));
 
-				// Receiving back
-				size_t reply_length = boost::asio::read(s, boost::asio::buffer(&dataReceived, request_length));
-				std::cout << "Reply from server: ";
-				printData(dataReceived);
+				//// Receiving back
+				//size_t reply_length = boost::asio::read(s, boost::asio::buffer(&dataReceived, request_length));
+				//std::cout << "Reply from server: ";
+				//printData(dataReceived);
 			}
 		}
 	}
