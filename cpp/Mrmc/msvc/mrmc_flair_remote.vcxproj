@@ -13,6 +13,9 @@
   <ItemGroup>
     <ClCompile Include="..\src\mrmc_flair_remote.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\mrmc_flair_api.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{30104D64-3847-482B-9A07-4CC0F9FB07C1}</ProjectGuid>
     <RootNamespace>mrmc_flair_remote</RootNamespace>

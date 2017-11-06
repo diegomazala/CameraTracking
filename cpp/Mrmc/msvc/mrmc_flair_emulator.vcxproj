@@ -13,6 +13,9 @@
   <ItemGroup>
     <ClCompile Include="..\src\mrmc_flair_emulator.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\mrmc_flair_api.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{66156B3E-8093-4421-83D5-930FFBE04307}</ProjectGuid>
     <RootNamespace>mrmc_flair_emulator</RootNamespace>

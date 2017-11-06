@@ -3,28 +3,12 @@
 #include <thread>
 #include <utility>
 #include <boost/asio.hpp>
+#include "mrmc_flair_api.h"
 
 using boost::asio::ip::tcp;
 
 const int max_length = 1024;
 
-
-#define API_DATA_LEN	16
-#define API_MARKER		0xABCF
-
-typedef struct
-{
-	unsigned short	marker;
-	unsigned short	major;
-	unsigned short	minor;
-	unsigned short	length;
-	unsigned char	bWrite;
-	short			number;
-	short			error;
-	int				checksum;
-	void			*unused;	// Internal Use only
-	float			data[API_DATA_LEN];
-} ApiData;
 
 
 void session(tcp::socket sock)
@@ -33,7 +17,7 @@ void session(tcp::socket sock)
 	{
 		for (;;)
 		{
-			ApiData dataBuffer[1];
+			FlairData dataBuffer[1];
 			
 			boost::system::error_code error;
 			size_t length = sock.read_some(boost::asio::buffer(dataBuffer), error);
@@ -43,19 +27,19 @@ void session(tcp::socket sock)
 			else if (error)
 				throw boost::system::system_error(error); // Some other error.
 
-			const ApiData& dataReceived = dataBuffer[0];
+			const FlairData& dataReceived = dataBuffer[0];
 			std::cout
 				<< "-- Received -- " << std::endl
 				<< "Marker : " << dataReceived.marker << std::endl
 				<< "Major  : " << dataReceived.major << std::endl
 				<< "Minor  : " << dataReceived.minor << std::endl
 				<< "Length : " << dataReceived.length << std::endl
-				<< "bWrite : " << (int)(dataReceived.bWrite) << ' ' << (char)(dataReceived.bWrite) << std::endl
+				<< "bWrite : " << static_cast<uint16_t>(dataReceived.bWrite) << std::endl
 				<< "Number : " << dataReceived.number << std::endl
 				<< "Error  : " << dataReceived.error << std::endl
 				<< "Data   : " << std::defaultfloat;
 
-			for (int j = 0; j < API_DATA_LEN; ++j)
+			for (int j = 0; j < FLAIRAPI_DATA_LEN; ++j)
 				std::cout << dataReceived.data[j] << ' ';
 			std::cout << std::endl << std::endl;
 

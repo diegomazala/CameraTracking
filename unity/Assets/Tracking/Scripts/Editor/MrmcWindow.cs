@@ -8,10 +8,16 @@ public class MrmcWindow : EditorWindow
     private class Plugin
     {
         [DllImport("mrmc_net_command")]
+        public static extern void MrmcConnect(string host_address, ushort port);
+
+        [DllImport("mrmc_net_command")]
+        public static extern void MrmcDisconnect();
+
+        [DllImport("mrmc_net_command")]
         public static extern void MrmcStop();
 
         [DllImport("mrmc_net_command")]
-        public static extern void MrmcPlay();
+        public static extern void MrmcShoot();
 
         [DllImport("mrmc_net_command")]
         public static extern void MrmcGoto(int frame);
@@ -33,6 +39,17 @@ public class MrmcWindow : EditorWindow
         EditorWindow.GetWindow(typeof(MrmcWindow));
     }
 
+    public static EditorWindow GetMainGameView()
+    {
+        //Creates a game window. Only works if there isn't one already.
+        EditorApplication.ExecuteMenuItem("Window/Game");
+
+        System.Type T = System.Type.GetType("UnityEditor.GameView,UnityEditor");
+        System.Reflection.MethodInfo GetMainGameView = T.GetMethod("GetMainGameView", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        System.Object Res = GetMainGameView.Invoke(null, null);
+        return (EditorWindow)Res;
+    }
+
 
     void OnGUI()
     {
@@ -42,6 +59,16 @@ public class MrmcWindow : EditorWindow
         {
             GUILayoutOption[] layoutOptions = { GUILayout.Width(30), GUILayout.Height(30)};
 
+            if (GUILayout.Button("C", layoutOptions))
+            {
+                Plugin.MrmcConnect("127.0.0.1", 53025);
+            }
+
+            if (GUILayout.Button("D", layoutOptions))
+            {
+                Plugin.MrmcDisconnect();
+            }
+
             if (GUILayout.Button(stopTex, layoutOptions))
             {
                 Plugin.MrmcStop();
@@ -49,7 +76,7 @@ public class MrmcWindow : EditorWindow
 
             if (GUILayout.Button(playTex, layoutOptions))
             {
-                Plugin.MrmcPlay();
+                Plugin.MrmcShoot();
                 tcpClient.Send();
             }
 
@@ -58,6 +85,16 @@ public class MrmcWindow : EditorWindow
             if (GUILayout.Button(nextTex, layoutOptions))
             {
                 Plugin.MrmcGoto(frameNumber);
+            }
+
+            if (GUILayout.Button(nextTex, layoutOptions))
+            {
+               
+            }
+
+            if (GUILayout.Button(stopTex, layoutOptions))
+            {
+                EditorApplication.ExecuteMenuItem("Window/Layouts/Wide");
             }
 
             GUILayout.FlexibleSpace();

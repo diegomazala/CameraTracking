@@ -13,6 +13,9 @@
   <ItemGroup>
     <ClCompile Include="..\src\mrmc_net_command.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\mrmc_flair_api.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{07F013EF-00D6-4F8B-98BF-43F96A2B67D9}</ProjectGuid>
     <RootNamespace>mrmc_net_command</RootNamespace>

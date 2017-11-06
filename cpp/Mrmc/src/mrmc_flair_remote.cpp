@@ -9,6 +9,7 @@
 //
 
 #include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <thread>
@@ -16,31 +17,15 @@
 #include <boost/asio.hpp>
 
 #include <conio.h> 
-
+#include "mrmc_flair_api.h"
 
 
 using boost::asio::ip::tcp;
 
-#define API_DATA_LEN	16
-#define API_MARKER		0xABCF
-
-typedef struct
-{
-	unsigned short	marker = API_MARKER;
-	unsigned short	major;
-	unsigned short	minor;
-	unsigned short	length;
-	unsigned char	bWrite = TRUE;
-	short			number;
-	short			error;
-	int				checksum;
-	void			*unused;	// Internal Use only
-	float			data[API_DATA_LEN];
-} ApiData;
 
 
-ApiData dataSent;
-ApiData dataReceived;
+FlairData dataSent;
+FlairData dataReceived;
 
 void printMenu()
 {
@@ -53,88 +38,90 @@ void printMenu()
 		<< "[ 1 ]   = Goto Position 1" << std::endl
 		<< "[ 2 ]   = Goto Position 2" << std::endl
 		<< "[ 3 ]   = Goto Position 3" << std::endl
-		<< "[ 2 ]   = Goto Frame 5" << std::endl
+		<< "[ 5 ]   = Goto Frame 50" << std::endl
 		<< "[ f ]   = Fwd Run" << std::endl
 		<< "[ b ]   = Bck Run" << std::endl
 		<< "[ w ]   = bWrite" << std::endl
 		<< "[ esc ] = Exit" << std::endl;
 }
 
-void printData(const ApiData& data)
+void printData(const FlairData& data)
 {
 	std::cout
 		<< data.marker << ' ' << data.major << ' ' << data.minor << ' '
 		<< data.length << ' ' << (int)(data.bWrite) << ' ' << data.number << ' '
 		<< data.error << '\t';
-	for (int j = 0; j < API_DATA_LEN; ++j)
+	for (int j = 0; j < FLAIRAPI_DATA_LEN; ++j)
 		std::cout << data.data[j] << ' ';
 	std::cout << std::endl << std::endl;
 }
 
-void play()
+void shoot()
 {
-	dataSent.marker = 43983;
-	dataSent.major = 1;
-	dataSent.minor = 1;
+	dataSent.marker = FLAIRAPI_MARKER;
+	dataSent.major = FLAIRAPI_CMD;
+	dataSent.minor = FLAIRCMD_SHOOT;
 }
 
 void stop()
 {
-	dataSent.marker = 43983;
-	dataSent.major = 1;
-	dataSent.minor = 0;
+	dataSent.marker = FLAIRAPI_MARKER;
+	dataSent.major = FLAIRAPI_CMD;
+	dataSent.minor = FLAIRCMD_STOP;
 }
 
 void go()
 {
-	dataSent.marker = 43983;
-	dataSent.major = 1;
-	dataSent.minor = 5;
+	dataSent.marker = FLAIRAPI_MARKER;
+	dataSent.major = FLAIRAPI_CMD;
+	dataSent.minor = FLAIRCMD_GOTO;
 }
 
 
 void fwd()
 {
-	dataSent.marker = 43983;
-	dataSent.major = 1;
-	dataSent.minor = 2;
+	dataSent.marker = FLAIRAPI_MARKER;
+	dataSent.major = FLAIRAPI_CMD;
+	dataSent.minor = FLAIRCMD_FWDRUN;
 }
 
 
 void bck()
 {
-	dataSent.marker = 43983;
-	dataSent.major = 1;
-	dataSent.minor = 3;
+	dataSent.marker = FLAIRAPI_MARKER;
+	dataSent.major = FLAIRAPI_CMD;
+	dataSent.minor = FLAIRCMD_BCKRUN;
 }
 
 
 void go_clear()
 {
-	dataSent.marker = 43983;
-	dataSent.major = 2;
-	dataSent.minor = 2;
+	dataSent.marker = FLAIRAPI_MARKER;
+	dataSent.major = FLAIRAPI_GOTO;
+	dataSent.minor = FLAIRGOTO_CLRGOTO;
+	std::memset(dataSent.data, 0, sizeof(dataSent.data)); // set to zero
 }
 
 
-void go_frame(int frame_index)
+void go_frame(float frame_index)
 {
-	dataSent.marker = 43983;
-	dataSent.major = 2;
-	dataSent.minor = 0;
-	dataSent.length = frame_index;
-	dataSent.number = frame_index;
+	std::cout << "GoTo Frame " << frame_index << std::endl;
+	dataSent.marker = FLAIRAPI_MARKER;
+	dataSent.major = FLAIRAPI_GOTO;
+	dataSent.minor = FLAIRGOTO_GOTOFRM;
+	dataSent.length = 1;
+	dataSent.number = 0;
 	dataSent.data[0] = frame_index;
 }
 
-void go_position(int pos_index)
+void go_position(short pos_index)
 {
-	dataSent.marker = 43983;
-	dataSent.major = 2;
-	dataSent.minor = 1;
-	dataSent.length = pos_index;
+	std::cout << "GoTo Position " << pos_index << std::endl;
+	dataSent.marker = FLAIRAPI_MARKER;
+	dataSent.major = FLAIRAPI_GOTO;
+	dataSent.minor = FLAIRGOTO_GOTOPOSN;
+	dataSent.length = 0;
 	dataSent.number = pos_index;
-	dataSent.data[0] = pos_index;
 }
 
 void write()
@@ -154,7 +141,7 @@ bool get_key_command()
 	{
 		case 112:	// p
 		case 80:	// P
-			play();
+			shoot();
 			break;
 
 		case 115:	// s
@@ -223,6 +210,9 @@ bool get_key_command()
 
 int main(int argc, char* argv[])
 {
+	std::cout << "Sizeof: " << sizeof(FlairData) << std::endl;
+
+	dataSent.bWrite = TRUE;
 	using namespace std::chrono_literals;
 	try
 	{
@@ -256,6 +246,11 @@ int main(int argc, char* argv[])
 
 				// Sending
 				size_t request_length = sizeof(dataSent);
+				
+				//Sending Side
+				//char buffer[sizeof(dataSent)];
+				//memcpy(buffer, &dataSent, sizeof(dataSent));
+
 				boost::asio::write(s, boost::asio::buffer(&dataSent, request_length));
 
 				//// Receiving back
