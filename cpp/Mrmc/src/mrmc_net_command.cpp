@@ -60,7 +60,7 @@ DllExport void MrmcStop()
 	MrmcSendCommand();
 }
 
-DllExport void MrmcForwardRun()
+DllExport void MrmcForward()
 {
 	flair_data_send.marker	= FLAIRAPI_MARKER;
 	flair_data_send.major	= FLAIRAPI_CMD;
@@ -68,7 +68,7 @@ DllExport void MrmcForwardRun()
 	MrmcSendCommand();
 }
 
-DllExport void MrmcBackwardRun()
+DllExport void MrmcBackward()
 {
 	flair_data_send.marker	= FLAIRAPI_MARKER;
 	flair_data_send.major	= FLAIRAPI_CMD;

@@ -20,7 +20,22 @@ public class MrmcWindow : EditorWindow
         public static extern void MrmcShoot();
 
         [DllImport("mrmc_net_command")]
-        public static extern void MrmcGoto(int frame);
+        public static extern void MrmcForward();
+
+        [DllImport("mrmc_net_command")]
+        public static extern void MrmcBackward();
+
+        [DllImport("mrmc_net_command")]
+        public static extern void MrmcCleanGoto();
+
+        [DllImport("mrmc_net_command")]
+        public static extern void MrmcGoto();
+
+        [DllImport("mrmc_net_command")]
+        public static extern void MrmcGotoFrame(float frame);
+
+        [DllImport("mrmc_net_command")]
+        public static extern void MrmcGotoPosition(ushort frame);
     }
 
 
@@ -31,7 +46,7 @@ public class MrmcWindow : EditorWindow
     Texture nextTex;
     int frameNumber = 0;
 
-    MrmcTcpClient tcpClient = new MrmcTcpClient();
+    //MrmcTcpClient tcpClient = new MrmcTcpClient();
 
     [MenuItem("Window/M.R.M.C.")]
     public static void ShowWindow()
@@ -55,10 +70,10 @@ public class MrmcWindow : EditorWindow
     {
         LoadButtonTextures();
 
+        GUILayoutOption[] layoutOptions = { GUILayout.Width(30), GUILayout.Height(30) };
+
         EditorGUILayout.BeginHorizontal();
         {
-            GUILayoutOption[] layoutOptions = { GUILayout.Width(30), GUILayout.Height(30)};
-
             if (GUILayout.Button("C", layoutOptions))
             {
                 Plugin.MrmcConnect("127.0.0.1", 53025);
@@ -77,25 +92,43 @@ public class MrmcWindow : EditorWindow
             if (GUILayout.Button(playTex, layoutOptions))
             {
                 Plugin.MrmcShoot();
-                tcpClient.Send();
+            }
+
+            if (GUILayout.Button("F", layoutOptions))
+            {
+                Plugin.MrmcForward();
+            }
+
+            if (GUILayout.Button("B", layoutOptions))
+            {
+            }
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        {
+            if (GUILayout.Button("G", layoutOptions))
+            {
+                Plugin.MrmcGoto();
+            }
+
+            if (GUILayout.Button("C", layoutOptions))
+            {
+                Plugin.MrmcCleanGoto();
             }
 
             frameNumber = EditorGUILayout.IntField(frameNumber, GUILayout.Width(50), GUILayout.Height(30));
 
-            if (GUILayout.Button(nextTex, layoutOptions))
+            if (GUILayout.Button("GF", layoutOptions))
             {
-                Plugin.MrmcGoto(frameNumber);
+                Plugin.MrmcGotoFrame((float)frameNumber);
             }
 
-            if (GUILayout.Button(nextTex, layoutOptions))
+            if (GUILayout.Button("GP", layoutOptions))
             {
-               
+                Plugin.MrmcGotoPosition((ushort)frameNumber);
             }
 
-            if (GUILayout.Button(stopTex, layoutOptions))
-            {
-                EditorApplication.ExecuteMenuItem("Window/Layouts/Wide");
-            }
 
             GUILayout.FlexibleSpace();
         }
