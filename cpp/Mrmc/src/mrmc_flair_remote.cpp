@@ -120,8 +120,14 @@ void go_position(short pos_index)
 	dataSent.marker = FLAIRAPI_MARKER;
 	dataSent.major = FLAIRAPI_GOTO;
 	dataSent.minor = FLAIRGOTO_GOTOPOSN;
+#if 0
 	dataSent.length = 0;
 	dataSent.number = pos_index;
+#else
+	dataSent.length		= 1;
+	dataSent.number		= 0;
+	dataSent.data[0]	= pos_index;
+#endif
 }
 
 void write()
@@ -208,15 +214,15 @@ bool get_key_command()
 	return command;
 }
 
+
 int main(int argc, char* argv[])
 {
-	std::cout << "Sizeof: " << sizeof(FlairData) << std::endl;
-
 	dataSent.bWrite = TRUE;
 	using namespace std::chrono_literals;
 	try
 	{
 		std::string host_address = "127.0.0.1";
+		//std::string host_address = "192.168.43.44";
 		std::string port = "53025";
 
 		if (argc != 3)
@@ -236,6 +242,8 @@ int main(int argc, char* argv[])
 		tcp::socket s(io_service);
 		tcp::resolver resolver(io_service);
 		boost::asio::connect(s, resolver.resolve({ host_address, port }));
+
+		std::cout << "Connected to " << host_address << std::endl;
 
 		while(true)
 		{
@@ -263,6 +271,7 @@ int main(int argc, char* argv[])
 	catch (std::exception& e)
 	{
 		std::cerr << "Exception: " << e.what() << "\n";
+		getch();
 	}
 
 	return 0;

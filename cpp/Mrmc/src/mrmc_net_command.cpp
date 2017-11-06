@@ -9,19 +9,30 @@
 static FlairData flair_data_send;
 static std::unique_ptr<boost::asio::ip::tcp::socket> flair_socket;
 static std::unique_ptr<boost::asio::io_service> flair_io_service;
+static bool flair_is_connected = false;
 
 
 DllExport void MrmcConnect(const char* host_address = "127.0.0.1", uint16_t port = 53025)
 {
 	//MessageBox(NULL, host_address, NULL, NULL);
-	flair_io_service = std::make_unique<boost::asio::io_service>();
-	flair_socket = std::make_unique<boost::asio::ip::tcp::socket>(*flair_io_service);
-	boost::asio::ip::tcp::resolver resolver(*flair_io_service);
-	boost::asio::connect(*flair_socket, resolver.resolve({ host_address, std::to_string(port) }));
+	try
+	{
+		flair_io_service = std::make_unique<boost::asio::io_service>();
+		flair_socket = std::make_unique<boost::asio::ip::tcp::socket>(*flair_io_service);
+		boost::asio::ip::tcp::resolver resolver(*flair_io_service);
+		boost::asio::connect(*flair_socket, resolver.resolve({ host_address, std::to_string(port) }));
+		flair_is_connected = true;
+	}
+	catch (std::exception& e)
+	{
+		flair_is_connected = false;
+		std::cerr << "Exception: " << e.what() << "\n";
+	}
 }
 
 DllExport void MrmcDisconnect()
 {
+	flair_is_connected = false;
 	flair_socket->close();
 	flair_io_service->stop();
 	flair_socket.reset();
@@ -103,6 +114,7 @@ DllExport void MrmcGotoFrame(float frame_index)
 	flair_data_send.number	= 0;
 	flair_data_send.data[0] = frame_index;
 	MrmcSendCommand();
+	MrmcGoto();
 }
 
 DllExport void MrmcGotoPosition(int16_t position_index)
@@ -111,8 +123,10 @@ DllExport void MrmcGotoPosition(int16_t position_index)
 	flair_data_send.major	= FLAIRAPI_GOTO;
 	flair_data_send.minor	= FLAIRGOTO_GOTOPOSN;
 	flair_data_send.bWrite	= TRUE;
-	flair_data_send.length	= 0;
-	flair_data_send.number	= position_index;
+	flair_data_send.length	= 1;
+	flair_data_send.number	= 0;
+	flair_data_send.data[0] = (float)position_index;
 	MrmcSendCommand();
+	MrmcGoto();
 }
 	
