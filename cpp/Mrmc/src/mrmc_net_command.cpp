@@ -12,9 +12,11 @@ static std::unique_ptr<boost::asio::io_service> flair_io_service;
 static bool flair_is_connected = false;
 
 
-DllExport void MrmcConnect(const char* host_address = "127.0.0.1", uint16_t port = 53025)
+DllExport bool MrmcConnect(const char* host_address = "127.0.0.1", uint16_t port = 53025)
 {
-	//MessageBox(NULL, host_address, NULL, NULL);
+	if (flair_is_connected)
+		return flair_is_connected;
+
 	try
 	{
 		flair_io_service = std::make_unique<boost::asio::io_service>();
@@ -26,24 +28,37 @@ DllExport void MrmcConnect(const char* host_address = "127.0.0.1", uint16_t port
 	catch (std::exception& e)
 	{
 		flair_is_connected = false;
-		std::cerr << "Exception: " << e.what() << "\n";
+		MessageBox(NULL, e.what(), "Mrmc Flair", MB_ICONWARNING | MB_OK);
 	}
+	return flair_is_connected;
 }
+
 
 DllExport void MrmcDisconnect()
 {
-	flair_is_connected = false;
-	flair_socket->close();
-	flair_io_service->stop();
-	flair_socket.reset();
-	//MessageBox(NULL, "Mrmc Disconnect\n", NULL, NULL);
+	if (!flair_is_connected)
+		return;
+
+	try
+	{
+		flair_socket->close();
+		flair_io_service->stop();
+		flair_socket.reset();
+		flair_is_connected = false;
+	}
+	catch (std::exception& e)
+	{
+		MessageBox(NULL, e.what(), "Mrmc Flair", MB_ICONWARNING | MB_OK);
+	}
 }
 
+DllExport bool MrmcIsConnected()
+{
+	return flair_is_connected;
+}
 
 DllExport void MrmcSendCommand()
 {
-	//MessageBox(NULL, "Mrmc Test from DLL\n", NULL, NULL);
-	
 	// Sending
 	size_t request_length = sizeof(flair_data_send);
 	boost::asio::write(*flair_socket, boost::asio::buffer(&flair_data_send, request_length));
@@ -104,7 +119,7 @@ DllExport void MrmcCleanGoto()
 	MrmcSendCommand();
 }
 
-DllExport void MrmcGotoFrame(float frame_index)
+DllExport void MrmcGotoFrame(int32_t frame_index)
 {
 	flair_data_send.marker	= FLAIRAPI_MARKER;
 	flair_data_send.major	= FLAIRAPI_GOTO;
@@ -112,7 +127,7 @@ DllExport void MrmcGotoFrame(float frame_index)
 	flair_data_send.bWrite	= TRUE;
 	flair_data_send.length	= 1;
 	flair_data_send.number	= 0;
-	flair_data_send.data[0] = frame_index;
+	flair_data_send.data[0] = (float)frame_index;
 	MrmcSendCommand();
 	MrmcGoto();
 }

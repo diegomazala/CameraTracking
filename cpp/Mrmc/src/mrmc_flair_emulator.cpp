@@ -68,15 +68,21 @@ int main(int argc, char* argv[])
 {
 	try
 	{
-		if (argc != 2)
+		int port = 53025;
+		if (argc < 2)
 		{
-			std::cerr << "Usage: blocking_tcp_echo_server <port>\n";
-			return 1;
+			std::cerr
+				<< "Usage  : flair_emulator <port>" << std::endl
+				<< "Running: flair_emulator " << port << std::endl;
+		}
+		else
+		{
+			port = std::atoi(argv[1]);
 		}
 
 		boost::asio::io_service io_service;
 
-		server(io_service, std::atoi(argv[1]));
+		server(io_service, port);
 	}
 	catch (std::exception& e)
 	{

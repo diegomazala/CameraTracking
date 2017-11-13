@@ -8,10 +8,13 @@ public class MrmcWindow : EditorWindow
     private class Plugin
     {
         [DllImport("mrmc_net_command")]
-        public static extern void MrmcConnect(string host_address, ushort port);
+        public static extern bool MrmcConnect(string host_address, ushort port);
 
         [DllImport("mrmc_net_command")]
         public static extern void MrmcDisconnect();
+
+        [DllImport("mrmc_net_command")]
+        public static extern bool MrmcIsConnected();
 
         [DllImport("mrmc_net_command")]
         public static extern void MrmcStop();
@@ -32,21 +35,29 @@ public class MrmcWindow : EditorWindow
         public static extern void MrmcGoto();
 
         [DllImport("mrmc_net_command")]
-        public static extern void MrmcGotoFrame(float frame);
+        public static extern void MrmcGotoFrame(int frame);
 
         [DllImport("mrmc_net_command")]
         public static extern void MrmcGotoPosition(ushort frame);
     }
 
+    string HostIpAddress = "127.0.0.1";
+    int Port = 53025;
+    int FrameNumber = 0;
+    int PositionNumber = 0;
 
 
-    GUIStyle guiStyle;
-    Texture stopTex;
-    Texture playTex;
-    Texture nextTex;
-    int frameNumber = 0;
+    [MenuItem("Examples/Inspector Titlebar")]
+    static void Init()
+    {
+        var window = GetWindow(typeof(MrmcWindow));
+        window.Show();
+    }
 
-    //MrmcTcpClient tcpClient = new MrmcTcpClient();
+    void OnDestroy()
+    {
+        Plugin.MrmcStop();
+    }
 
     [MenuItem("Window/M.R.M.C.")]
     public static void ShowWindow()
@@ -68,90 +79,110 @@ public class MrmcWindow : EditorWindow
 
     void OnGUI()
     {
-        LoadButtonTextures();
+        bool is_connected = Plugin.MrmcIsConnected();
 
-        GUILayoutOption[] layoutOptions = { GUILayout.Width(30), GUILayout.Height(30) };
-
-        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.BeginVertical(GUILayout.Width(200));
         {
-            if (GUILayout.Button("C", layoutOptions))
+            EditorGUILayout.BeginHorizontal(GUILayout.Width(200));
             {
-                Plugin.MrmcConnect("127.0.0.1", 53025);
+                EditorGUILayout.LabelField("Ip Address", GUILayout.Width(70));
+                HostIpAddress = EditorGUILayout.TextField(HostIpAddress, GUILayout.Width(80));
+                Port = EditorGUILayout.IntField(Port, GUILayout.Width(50));
             }
+            EditorGUILayout.EndHorizontal();
 
-            if (GUILayout.Button("D", layoutOptions))
+            EditorGUILayout.BeginHorizontal();
             {
-                Plugin.MrmcDisconnect();
+                if (GUILayout.Button("Connect", (is_connected ? "box" : "button"), GUILayout.Width(100)))
+                {
+                    Plugin.MrmcConnect(HostIpAddress, (ushort)Port);
+                }
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Disconnect", GUILayout.Width(100)))
+                {
+                    Plugin.MrmcDisconnect();
+                }
             }
+            EditorGUILayout.EndHorizontal();
 
-            if (GUILayout.Button(stopTex, layoutOptions))
-            {
-                Plugin.MrmcStop();
-            }
-
-            if (GUILayout.Button(playTex, layoutOptions))
-            {
-                Plugin.MrmcShoot();
-            }
-
-            if (GUILayout.Button("F", layoutOptions))
-            {
-                Plugin.MrmcForward();
-            }
-
-            if (GUILayout.Button("B", layoutOptions))
-            {
-            }
         }
-        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndVertical();
 
-        EditorGUILayout.BeginHorizontal();
+        EditorGUI.BeginDisabledGroup(!is_connected);
+        EditorGUILayout.BeginVertical(GUILayout.Width(200));
         {
-            if (GUILayout.Button("G", layoutOptions))
+            EditorGUILayout.BeginHorizontal();
             {
-                Plugin.MrmcGoto();
+                if (GUILayout.Button("Shoot", GUILayout.Width(100)))
+                {
+                    Plugin.MrmcShoot();
+                }
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Stop", GUILayout.Width(100)))
+                {
+                    Plugin.MrmcStop();
+                }
             }
+            EditorGUILayout.EndHorizontal();
 
-            if (GUILayout.Button("C", layoutOptions))
+
+            EditorGUILayout.BeginHorizontal();
             {
-                Plugin.MrmcCleanGoto();
+                if (GUILayout.Button("Forward", GUILayout.Width(100)))
+                {
+                    Plugin.MrmcForward();
+                }
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Backward", GUILayout.Width(100)))
+                {
+                    Plugin.MrmcBackward();
+                }
             }
+            EditorGUILayout.EndHorizontal();
 
-            frameNumber = EditorGUILayout.IntField(frameNumber, GUILayout.Width(50), GUILayout.Height(30));
 
-            if (GUILayout.Button("GF", layoutOptions))
+            EditorGUILayout.BeginHorizontal();
             {
-                Plugin.MrmcGotoFrame((float)frameNumber);
+                if (GUILayout.Button("GoTo", GUILayout.Width(100)))
+                {
+                    Plugin.MrmcGoto();
+                }
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Clean", GUILayout.Width(100)))
+                {
+                    Plugin.MrmcCleanGoto();
+                }
             }
+            EditorGUILayout.EndHorizontal();
 
-            if (GUILayout.Button("GP", layoutOptions))
+
+            EditorGUILayout.BeginHorizontal();
             {
-                Plugin.MrmcGotoPosition((ushort)frameNumber);
+                EditorGUILayout.LabelField("Frame Number: ", GUILayout.Width(100));
+                FrameNumber = EditorGUILayout.IntField(FrameNumber, GUILayout.Width(40));
+                if (GUILayout.Button("GoTo", GUILayout.Width(60)))
+                {
+                    Plugin.MrmcGotoFrame(FrameNumber);
+                }
             }
+            EditorGUILayout.EndHorizontal();
 
 
-            GUILayout.FlexibleSpace();
+            EditorGUILayout.BeginHorizontal();
+            {
+                EditorGUILayout.LabelField("Position Number: ", GUILayout.Width(100));
+                PositionNumber = EditorGUILayout.IntField(PositionNumber, GUILayout.Width(40));
+                if (GUILayout.Button("GoTo", GUILayout.Width(60)))
+                {
+                    Plugin.MrmcGotoPosition((ushort)PositionNumber);
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+
         }
-        EditorGUILayout.EndHorizontal();
-
-    }
-
-    void LoadButtonTextures()
-    {
-        if (guiStyle == null)
-        {
-            guiStyle = new GUIStyle(GUI.skin.textField);
-            guiStyle.alignment = TextAnchor.MiddleCenter;
-        }
-
-        if (stopTex == null)
-            stopTex = (Texture)Resources.Load("stop");
-
-        if (playTex == null)
-            playTex = (Texture)Resources.Load("play");
-
-        if (nextTex == null)
-            nextTex = (Texture)Resources.Load("next");
+        EditorGUILayout.EndVertical();
+        EditorGUI.EndDisabledGroup();
     }
 
 }
