@@ -56,7 +56,8 @@ public class MrmcWindow : EditorWindow
 
     void OnDestroy()
     {
-        Plugin.MrmcStop();
+        if (Plugin.MrmcIsConnected())
+            Plugin.MrmcStop();
     }
 
     [MenuItem("Window/M.R.M.C.")]

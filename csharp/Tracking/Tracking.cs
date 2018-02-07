@@ -131,14 +131,10 @@ namespace Tracking
         {
             buffer.Enqueue(packet);
 
-            // the counter looped and there is no drop
-            //if (packet_id == 0)
-            //{
-            //    lastPacketCounter = 1;
-            //    return;
-            //}
-
-            dropCount += packet.Counter - lastPacketCounter - 1;
+            if (packet.Counter > lastPacketCounter)
+            {
+                dropCount += System.Math.Max(packet.Counter - lastPacketCounter - 1, 0);
+            }
                         
             lastPacketCounter = packet.Counter;
         }

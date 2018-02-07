@@ -1,16 +1,15 @@
 using UnityEngine;
 using System.Collections;
 
+using StypeGripPacket = Tracking.StypeGrip.PacketHF;
+//using StypeGripPacket = Tracking.StypeGrip.PacketA5;
+
 public class StypeGripClientUI : MonoBehaviour
 {
     public StypeGripClient client = null;
 
-#if true //STYPE_HF
     [HideInInspector]
-    public Tracking.NetReader<Tracking.StypeGrip.PacketHF> netReader = null;
-#else
-    public Tracking.NetReader<Tracking.StypeGrip.PacketA5> netReader = null;
-#endif
+    public Tracking.NetReader<StypeGripPacket> netReader = null;
 
     public UnityEngine.UI.Button connectButton;
     public UnityEngine.UI.Button disconnectButton;
@@ -104,18 +103,9 @@ public class StypeGripClientUI : MonoBehaviour
         connectButton.interactable = !netReader.IsReading;
         disconnectButton.interactable = netReader.IsReading;
 
-        //if (netReader.RingBuffer.Packet.Repeats == 0)
-        //{
-        //    statusImage.color = new Color(0.0f, 0.5f, 0.0f);
-        //    statusText.text = "Connected";
-        //}
-        //else
-        //{
-        //    statusImage.color = new Color(0.5f, 0.0f, 0.0f);
-        //    statusText.text = "Disconnected";
-        //}
+        var packet = netReader.Buffer.Packet;
 
-        counterText.text = netReader.Buffer.Packet.Counter.ToString();
+        counterText.text = packet.Counter.ToString();
         dropsText.text = netReader.Buffer.Drops.ToString();
 
         if (netReader.Buffer.Drops != lastDropCount)
@@ -130,27 +120,25 @@ public class StypeGripClientUI : MonoBehaviour
             statusText.text = "Status: Ok";
         }
 
-        positionText.text = netReader.Buffer.Packet.Position.ToString();
-        rotationText.text = netReader.Buffer.Packet.EulerAngles.ToString();
+        positionText.text = packet.Position.ToString();
+        rotationText.text = packet.EulerAngles.ToString();
 
         //imageSizeText.text = "(" + netReader.Config.ImageWidth.ToString() + ", " + netReader.Config.ImageHeight.ToString() + ")";
-        chipSizeText.text = new Vector2(netReader.Buffer.Packet.ChipWidth, netReader.Buffer.Packet.ChipHeight).ToString("0.00");
-        centerShiftText.text = new Vector2(netReader.Buffer.Packet.CenterX, netReader.Buffer.Packet.CenterY).ToString("0.00");
+        chipSizeText.text = new Vector2(packet.ChipWidth, packet.ChipHeight).ToString("0.00");
+        centerShiftText.text = new Vector2(packet.CenterX, packet.CenterY).ToString("0.00");
 
-        fovText.text = netReader.Buffer.Packet.FovY.ToString("0.000");
-        aspectText.text = netReader.Buffer.Packet.AspectRatio.ToString("0.000");
+        fovText.text = packet.FovY.ToString("0.000");
+        aspectText.text = packet.AspectRatio.ToString("0.000");
 
-        k1Text.text = netReader.Buffer.Packet.K1.ToString("0.000000");
-        k2Text.text = netReader.Buffer.Packet.K2.ToString("0.000000");
+        k1Text.text = packet.K1.ToString("0.000000");
+        k2Text.text = packet.K2.ToString("0.000000");
 
-#if false
         int total = Mathf.Min(netReader.Buffer.Length, MaxCountersUI);
         int it = 0;
         for (it = 0; it < total; ++it)
-            bufferCounterText[it].text = netReader.Buffer.Data[it].Counter.ToString();
+            bufferCounterText[it].text = netReader.Buffer.GetPacket(it).Counter.ToString();
 
         for (int i = it; i < MaxCountersUI; ++i)
             bufferCounterText[i].text = "x";
-#endif
     }
 }

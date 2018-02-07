@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+using StypeGripPacket = Tracking.StypeGrip.PacketHF;
+//using StypeGripPacket = Tracking.StypeGrip.PacketA5;
 
 public class StypeGripClient : MonoBehaviour
 {
@@ -12,13 +14,8 @@ public class StypeGripClient : MonoBehaviour
 
     public Tracking.StypeGrip.Config config;
 
-#if true //STYPE_HF
-    private Tracking.RingBuffer<Tracking.StypeGrip.PacketHF> ringBuffer;
-    public Tracking.NetReader<Tracking.StypeGrip.PacketHF> netReader = null;
-#else
-    private Tracking.RingBuffer<Tracking.StypeGrip.PacketA5> ringBuffer;
-    public Tracking.NetReader<Tracking.StypeGrip.PacketA5> netReader = null;
-#endif
+    private Tracking.RingBuffer<StypeGripPacket> ringBuffer;
+    public Tracking.NetReader<StypeGripPacket> netReader = null;
 
 
     private StypeGripClientUI stypeClientUI = null;
@@ -52,6 +49,7 @@ public class StypeGripClient : MonoBehaviour
             return (new System.IO.DirectoryInfo(sb.ToString())).FullName + Tracking.StypeGrip.Config.FileName;
         }
     }
+
 
     public bool Distortion
     {
@@ -90,23 +88,15 @@ public class StypeGripClient : MonoBehaviour
 
     void Awake()
     {
-#if true //STYPE_HF
-        netReader = new Tracking.NetReader<Tracking.StypeGrip.PacketHF>();
+        netReader = new Tracking.NetReader<StypeGripPacket>();
         netReader.Config = config;
-        ringBuffer = new Tracking.RingBuffer<Tracking.StypeGrip.PacketHF>(config.Delay);
+        ringBuffer = new Tracking.RingBuffer<StypeGripPacket>(config.Delay);
         netReader.Buffer = ringBuffer;
-#else
-        netReader = new Tracking.NetReader<Tracking.StypeGrip.PacketA5>();
-        netReader.Config = config;
-        ringBuffer = new Tracking.RingBuffer<Tracking.StypeGrip.PacketA5>(config.Delay);
-        netReader.Buffer = ringBuffer;
-#endif
     }
 
 
     void OnEnable()
     {
-
         // Try to load a configuration file
         // If didn't find a config file, create a default
 #if !UNITY_EDITOR

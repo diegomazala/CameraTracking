@@ -26,10 +26,14 @@ public class UIWindowControl : MonoBehaviour
 
     public void ShowHide(bool show)
     {
+#if false
         for (int i = 0; i < uiChildren.Length; ++i)
             uiChildren[i].gameObject.SetActive(show);
 
         if (imagePanel)
             imagePanel.enabled = show;
+#endif
     }
+
+
 }
