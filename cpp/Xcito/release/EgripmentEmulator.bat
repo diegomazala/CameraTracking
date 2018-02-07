@@ -1,0 +1,1 @@
+XcitoWriteNet.exe 127.0.0.1 12000 matrix camera_y_up studio_y_up camera_to_studio field_of_view vertical ignore_blank adjust_aspect shift_in_pixels
