@@ -25,6 +25,10 @@ public class StypeGripClient : MonoBehaviour
         {
             stypeClientUI = value;
             stypeClientUI.netReader = netReader;
+            if (stypeClientUI.imageSizeText)
+            {
+                stypeClientUI.imageSizeText.text = "(" + config.ImageWidth.ToString() + ", " + config.ImageHeight.ToString() + ")";
+            }
         }
 
         get
