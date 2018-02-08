@@ -5,6 +5,5 @@
     "Delay": 5,
     "ReadIntervalMs": 10,
     "ConsumeWhileAvailable": true,
-    "ImageWidth": 1920,
-    "ImageHeight": 1080
+    "ImageScale": 1.0
 }

@@ -25,9 +25,9 @@ public class StypeGripClient : MonoBehaviour
         {
             stypeClientUI = value;
             stypeClientUI.netReader = netReader;
-            if (stypeClientUI.imageSizeText)
+            if (stypeClientUI.imageScaleText)
             {
-                stypeClientUI.imageSizeText.text = "(" + config.ImageWidth.ToString() + ", " + config.ImageHeight.ToString() + ")";
+                stypeClientUI.imageScaleText.text = config.ImageScale.ToString("0.000");
             }
         }
 
@@ -103,7 +103,7 @@ public class StypeGripClient : MonoBehaviour
     {
         // Try to load a configuration file
         // If didn't find a config file, create a default
-#if !UNITY_EDITOR
+#if UNITY_EDITOR
         if (!netReader.Config.Load(ConfigFile))
             netReader.Config.Save(ConfigFile); 
 #endif

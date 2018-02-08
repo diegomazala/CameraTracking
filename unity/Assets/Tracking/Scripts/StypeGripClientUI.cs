@@ -27,7 +27,7 @@ public class StypeGripClientUI : MonoBehaviour
     public UnityEngine.UI.Text positionText;
     public UnityEngine.UI.Text rotationText;
 
-    public UnityEngine.UI.Text imageSizeText;
+    public UnityEngine.UI.Text imageScaleText;
     public UnityEngine.UI.Text chipSizeText;
     public UnityEngine.UI.Text centerShiftText;
 
@@ -123,7 +123,6 @@ public class StypeGripClientUI : MonoBehaviour
         positionText.text = packet.Position.ToString();
         rotationText.text = packet.EulerAngles.ToString();
 
-        //imageSizeText.text = "(" + netReader.Config.ImageWidth.ToString() + ", " + netReader.Config.ImageHeight.ToString() + ")";
         chipSizeText.text = new Vector2(packet.ChipWidth, packet.ChipHeight).ToString("0.00");
         centerShiftText.text = new Vector2(packet.CenterX, packet.CenterY).ToString("0.00");
 
