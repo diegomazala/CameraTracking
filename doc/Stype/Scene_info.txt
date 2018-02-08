@@ -1,0 +1,26 @@
+In the scene there are two cubes and one paper.
+
+Cube #1. 
+	Purple cube, sitting on the floor, left to the table
+	Dimensions: 0.5 x 0.5 x 0.5 meters
+	Position of a CENTER of a cube:
+		x= -1.0m
+		y=  0.25m
+		z= -4.5m
+
+
+Cube #2. 
+	Blue cube, in the air, right from the table
+	Dimensions: 0.5 x 0.5 x 0.5 meters
+	Position of a CENTER of a cube:
+		x=  0.7m
+		y=  1.0m
+		z= -5.0m
+
+Paper
+	On the back wall
+	Dimensions: 0.2 x 0.2 m
+	Position of a CENTER of a paper:
+		x=  0.092m
+		y=  1.042m
+		z= -5.88m
