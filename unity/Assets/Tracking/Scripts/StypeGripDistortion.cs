@@ -9,23 +9,27 @@ public class StypeGripDistortion : MonoBehaviour
     public Shader shader;
     private Material m_Material;
 
-    public Vector2 distParams = Vector2.zero;
-    public Vector2 chipSize = new Vector2(9.59f, 5.41f);
-    public Vector2 centerShift = Vector2.zero;
-    public Vector2 texCoordScale = Vector2.one;
-    public float opacity;
+    public float PA_w = 9.59f; // mm
+    public float AR = 1.7778f;
+    public float CSX = 0.0f;
+    public float CSY = 0.0f;
+    public float K1 = 0.0f;
+    public float K2 = 0.0f;
+    public float Oversize = 1.0f;
 
 
 
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-            material.SetVector("distParams", distParams);
-            material.SetVector("chipSize", chipSize);
-            material.SetVector("centerShift", centerShift);
-            material.SetVector("texCoordScale", texCoordScale);
-            material.SetFloat("opacity", opacity);
+        material.SetFloat("PA_w", PA_w);
+        material.SetFloat("AR", AR);
+        material.SetFloat("CSX", CSX);
+        material.SetFloat("CSY", CSY);
+        material.SetFloat("K1", K1);
+        material.SetFloat("K2", K2);
+        material.SetFloat("Oversize", Oversize);
 
-            Graphics.Blit(source, destination, material);
+        Graphics.Blit(source, destination, material);
     }
 
 

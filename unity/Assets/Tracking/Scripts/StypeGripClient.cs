@@ -161,7 +161,6 @@ public class StypeGripClient : MonoBehaviour
 
     void UpdateCameras()
     {
-        
         for (int field = 0; field < TargetCamera.Length; ++field)
         {
             Camera cam = TargetCamera[field];
@@ -169,7 +168,6 @@ public class StypeGripClient : MonoBehaviour
             cam.ResetProjectionMatrix();
             cam.ResetWorldToCameraMatrix();
 
-#if true
             //Quaternion rot = netReader.Buffer.GetPacket(field).Rotation;
             Vector3 euler = netReader.Buffer.GetPacket(field).EulerAngles;
             Vector3 pos = netReader.Buffer.GetPacket(field).Position;
@@ -180,61 +178,31 @@ public class StypeGripClient : MonoBehaviour
 
             cam.aspect = (float)netReader.Buffer.GetPacket(field).AspectRatio;
             cam.fieldOfView = (float)netReader.Buffer.GetPacket(field).FovY;
-#endif
 
-            if (applyCCDShift)
-                ApplyCcdShift(cam, field, true);    // true = shift in pixels for A5 protocol
-
-
-            //Distortion = applyDistortion;
-            //if (applyDistortion)
-            //    ApplyDistortion(cam, field, true); // true = shift in pixels for A5 protocol
+            if (applyDistortion)
+                ApplyDistortion(cam, field); // true = shift in pixels for A5 protocol
         }
         
     }
 
 
+    
 
-    void ApplyCcdShift(Camera cam, int field, bool shift_in_pixels)
-    {
-        
-        Matrix4x4 p = cam.projectionMatrix;
-        if (shift_in_pixels)
-        {
-            p[0, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterX / config.ImageWidth;
-            p[1, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterY / config.ImageHeight;
-        }
-        else // shift in mm
-        {
-            p[0, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterX / netReader.Buffer.GetPacket(field).ChipWidth;
-            p[1, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterY / netReader.Buffer.GetPacket(field).ChipHeight;
-        }
-        cam.projectionMatrix = p;
-        
-    }
-
-
-    void ApplyDistortion(Camera cam, int field, bool shift_in_pixels)
+    void ApplyDistortion(Camera cam, int field)
     {
         StypeGripDistortion dist = cam.GetComponent<StypeGripDistortion>();
         if (dist != null)
         {
-            dist.distParams = new Vector2(netReader.Buffer.GetPacket(field).K1, netReader.Buffer.GetPacket(field).K2);
-            dist.chipSize = new Vector2(netReader.Buffer.GetPacket(field).ChipWidth, netReader.Buffer.GetPacket(field).ChipHeight);
+            var Packet = netReader.Buffer.GetPacket(field);
 
-            if (shift_in_pixels)
-            {
-                dist.centerShift = new Vector2(
-                    netReader.Buffer.GetPacket(field).CenterX / (float)config.ImageWidth * netReader.Buffer.GetPacket(field).ChipWidth,
-                    netReader.Buffer.GetPacket(field).CenterY / (float)config.ImageHeight * netReader.Buffer.GetPacket(field).ChipHeight);
-            }
-            else    // shift in mm
-            {
-                dist.centerShift = new Vector2(
-                    netReader.Buffer.GetPacket(field).CenterX,
-                    netReader.Buffer.GetPacket(field).CenterY);
-            }
-            //dist.texCoordScale = xcito.TexCoordScale;
+            dist.PA_w = Packet.ChipWidth;
+            dist.AR = Packet.AspectRatio;
+
+            dist.CSX = Packet.CenterX;
+            dist.CSY = Packet.CenterY;
+
+            dist.K1 = Packet.K1;
+            dist.K2 = Packet.K2;
         }
         
     }
