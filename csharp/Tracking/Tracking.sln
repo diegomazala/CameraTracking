@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackingMrmc", "TrackingMrm
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackingStype", "TrackingStype.csproj", "{6A235B88-A3B4-4B3A-8C0C-A9E41C9E4F14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackingFreeD", "TrackingFreeD.csproj", "{62870F20-7BB5-43D1-B54C-3C7A0C40DB8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{6A235B88-A3B4-4B3A-8C0C-A9E41C9E4F14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A235B88-A3B4-4B3A-8C0C-A9E41C9E4F14}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A235B88-A3B4-4B3A-8C0C-A9E41C9E4F14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62870F20-7BB5-43D1-B54C-3C7A0C40DB8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62870F20-7BB5-43D1-B54C-3C7A0C40DB8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62870F20-7BB5-43D1-B54C-3C7A0C40DB8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62870F20-7BB5-43D1-B54C-3C7A0C40DB8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

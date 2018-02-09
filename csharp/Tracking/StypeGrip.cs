@@ -529,9 +529,6 @@ namespace Tracking
         [System.Serializable]
         public class NetReader<T> : Tracking.NetReader<T>
         {
-            public Xcito.CameraConstants CameraConsts = new Xcito.CameraConstants();
-
-
             protected override void ReadDataThread()
             {
                 IPEndPoint receivedEP = remoteEP;

@@ -7,22 +7,19 @@ using System.Threading;
 
 public class TrackingApp
 {
-    public static void PrintData(Tracking.StypeGrip.PacketHF packet)
+    public static void PrintData(Tracking.FreeD.Packet packet)
     {
         System.Console.WriteLine("---------------------------------------------------");
         System.Console.WriteLine("Counter: {0}", packet.Counter);
-        System.Console.WriteLine("Time   : {0}", packet.Timecode);
-        System.Console.WriteLine("Pos    : {0}, {1}, {2}", packet.XYZ[0], packet.XYZ[1], packet.XYZ[2]);
-        System.Console.WriteLine("Rot    : {0}, {1}, {2}", packet.PanTiltRoll[0], packet.PanTiltRoll[1], packet.PanTiltRoll[2]);
-        System.Console.WriteLine("Fov    : {0} {1}", packet.FovX, packet.FovY);
+        System.Console.WriteLine("Type/Id: {0} {1}", packet.MessageType, packet.Id);
+        System.Console.WriteLine("Pos    : {0}", packet.Position.ToString());
+        System.Console.WriteLine("Rot    : {0}", packet.EulerAngles.ToString());
         System.Console.WriteLine("Zoom   : {0}", packet.Zoom);
-        System.Console.WriteLine("Focus  : {0}", packet.Focus);
-        System.Console.WriteLine("K1/K2  : {0} {1}", packet.K1, packet.K2);
         System.Console.WriteLine("\n---------------------------------------------------");
     }
 
 
-    public static void PrintStats(Tracking.RingBuffer<Tracking.StypeGrip.PacketHF> ringBuffer)
+    public static void PrintStats(Tracking.RingBuffer<Tracking.FreeD.Packet> ringBuffer)
     {
         System.Console.WriteLine("---------------------------------------------------");
         System.Console.WriteLine("Time   : {0}", DateTime.Now);
@@ -33,7 +30,7 @@ public class TrackingApp
         System.Console.WriteLine("\n---------------------------------------------------");
     }
 
-    public static void PrintConfig(Tracking.StypeGrip.Config config)
+    public static void PrintConfig(Tracking.FreeD.Config config)
     {
         System.Console.WriteLine("\n---------------------------------------------------");
         System.Console.WriteLine("Local Ip              : {0}", config.LocalIp);
@@ -60,7 +57,7 @@ public class TrackingApp
     public static void Main(string[] args)
     {
         System.Console.WriteLine("Usage: TrackingApp.exe Host Port Delay ReadInterval ConsumeWhileAvailable");
-        Tracking.StypeGrip.Config config = new Tracking.StypeGrip.Config();
+        Tracking.FreeD.Config config = new Tracking.FreeD.Config();
         config.LocalIp = "127.0.0.1";
         config.RemoteIp = "0.0.0.0";
         config.Port = 12000;
@@ -85,10 +82,10 @@ public class TrackingApp
         PrintConfig(config);
 
 
-        Tracking.INetReader<Tracking.StypeGrip.PacketHF> netReader
-            //= new Tracking.StypeGrip.NetReaderAsync<Tracking.StypeGrip.PacketHF>();
-            = new Tracking.StypeGrip.NetReader<Tracking.StypeGrip.PacketHF>();
-        Tracking.RingBuffer<Tracking.StypeGrip.PacketHF> ringBuffer = new Tracking.RingBuffer<Tracking.StypeGrip.PacketHF>(config.Delay);
+        Tracking.INetReader<Tracking.FreeD.Packet> netReader
+            //= new Tracking.FreeD.NetReaderAsync<Tracking.FreeD.Packet>();
+            = new Tracking.FreeD.NetReader<Tracking.FreeD.Packet>();
+        Tracking.RingBuffer<Tracking.FreeD.Packet> ringBuffer = new Tracking.RingBuffer<Tracking.FreeD.Packet>(config.Delay);
 
         netReader.Config = config;
         netReader.Buffer = ringBuffer;
@@ -96,9 +93,7 @@ public class TrackingApp
         netReader.Connect(config, ringBuffer);
         ringBuffer.ResetDrops();
 
-
         PrintHelp();
-
 
         bool exit = false;
         bool continuous_print = false;
