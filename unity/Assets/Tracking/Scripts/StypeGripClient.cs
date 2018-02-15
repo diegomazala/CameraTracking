@@ -103,7 +103,7 @@ public class StypeGripClient : MonoBehaviour
     {
         // Try to load a configuration file
         // If didn't find a config file, create a default
-#if !UNITY_EDITOR
+#if UNITY_EDITOR
         //if (!netReader.Config.Load(ConfigFile))
         //  netReader.Config.Save(ConfigFile); 
         if (System.IO.File.Exists(ConfigFile))
@@ -219,6 +219,8 @@ public class StypeGripClient : MonoBehaviour
 
             dist.K1 = Packet.K1;
             dist.K2 = Packet.K2;
+
+            dist.Oversize = config.ImageScale;
         }
         
     }

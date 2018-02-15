@@ -107,6 +107,7 @@ public class StypeGripClientUI : MonoBehaviour
 
         counterText.text = packet.Counter.ToString();
         dropsText.text = netReader.Buffer.Drops.ToString();
+        imageScaleText.text = client.config.ImageScale.ToString();
 
         if (netReader.Buffer.Drops != lastDropCount)
         {

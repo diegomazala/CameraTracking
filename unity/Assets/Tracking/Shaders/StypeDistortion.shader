@@ -62,7 +62,7 @@ Shader "DTPD/Stype Distortion"
 		}
 		else 
 		{
-			return float4(1.0, 1.0, 0.0, 1.0);  //draw empty pixel
+			return float4(0.0, 0.0, 0.0, 0.0);  //draw empty pixel
 		}
 
 	}
