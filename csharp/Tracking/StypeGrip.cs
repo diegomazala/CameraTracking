@@ -632,18 +632,7 @@ namespace Tracking
                     bool isRightPort = (wantedIpEndPoint.Port == receivedIpEndPoint.Port) || wantedIpEndPoint.Port == 0;
                     if (isRightHost && isRightPort)
                     {
-                        if (data[6] == 'P' && data[7] == 'A')  // Parameters && ASCII
-                        {
-                            Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), data));
-                        }
-                        else if (data[6] == 'C' && data[7] == 'A')  // Constants && ASCII
-                        {
-                        }
-                        else
-                        {
-                            System.Console.WriteLine("Unknown Format/Encoding");
-                        }
-
+                        Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), data));
                         TotalCounter++;
                     }
 
