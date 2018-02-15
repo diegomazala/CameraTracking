@@ -15,7 +15,7 @@ public class StypeGripClient : MonoBehaviour
     public Tracking.StypeGrip.Config config;
 
     private Tracking.RingBuffer<StypeGripPacket> ringBuffer;
-    public Tracking.NetReader<StypeGripPacket> netReader = null;
+    public Tracking.INetReader<StypeGripPacket> netReader = null;
 
 
     private StypeGripClientUI stypeClientUI = null;
@@ -92,7 +92,7 @@ public class StypeGripClient : MonoBehaviour
 
     void Awake()
     {
-        netReader = new Tracking.NetReader<StypeGripPacket>();
+        netReader = new Tracking.StypeGrip.NetReader<StypeGripPacket>();
         netReader.Config = config;
         ringBuffer = new Tracking.RingBuffer<StypeGripPacket>(config.Delay);
         netReader.Buffer = ringBuffer;
@@ -103,7 +103,7 @@ public class StypeGripClient : MonoBehaviour
     {
         // Try to load a configuration file
         // If didn't find a config file, create a default
-#if UNITY_EDITOR
+#if !UNITY_EDITOR
         //if (!netReader.Config.Load(ConfigFile))
         //  netReader.Config.Save(ConfigFile); 
         if (System.IO.File.Exists(ConfigFile))
@@ -132,7 +132,7 @@ public class StypeGripClient : MonoBehaviour
                 continue;
             }
         }
-
+        Debug.Log(config.RemoteIp);
         netReader.Connect(config, ringBuffer);
         ringBuffer.ResetDrops();
     }

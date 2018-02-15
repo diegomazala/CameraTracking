@@ -9,7 +9,7 @@ public class StypeGripClientUI : MonoBehaviour
     public StypeGripClient client = null;
 
     [HideInInspector]
-    public Tracking.NetReader<StypeGripPacket> netReader = null;
+    public Tracking.INetReader<StypeGripPacket> netReader = null;
 
     public UnityEngine.UI.Button connectButton;
     public UnityEngine.UI.Button disconnectButton;
@@ -107,7 +107,7 @@ public class StypeGripClientUI : MonoBehaviour
 
         counterText.text = packet.Counter.ToString();
         dropsText.text = netReader.Buffer.Drops.ToString();
-        imageScaleText.text = client.config.ImageScale.ToString();
+        imageScaleText.text = client.config.ImageScale.ToString("0.00");
 
         if (netReader.Buffer.Drops != lastDropCount)
         {
