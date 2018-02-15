@@ -103,9 +103,25 @@ public class StypeGripClient : MonoBehaviour
     {
         // Try to load a configuration file
         // If didn't find a config file, create a default
-#if UNITY_EDITOR
-        if (!netReader.Config.Load(ConfigFile))
-            netReader.Config.Save(ConfigFile); 
+#if !UNITY_EDITOR
+        //if (!netReader.Config.Load(ConfigFile))
+        //  netReader.Config.Save(ConfigFile); 
+        if (System.IO.File.Exists(ConfigFile))
+        {
+            string json_str = System.IO.File.ReadAllText(ConfigFile);
+            if (json_str.Length > 0)
+                UnityEngine.JsonUtility.FromJsonOverwrite(json_str, config);
+        }
+        else
+        {
+            System.IO.FileInfo fileInfo = new System.IO.FileInfo(ConfigFile);
+            if (!fileInfo.Exists)
+                System.IO.Directory.CreateDirectory(fileInfo.Directory.FullName);
+
+            bool prettyPrint = true;
+            string json_str = UnityEngine.JsonUtility.ToJson(config, prettyPrint);
+            System.IO.File.WriteAllText(ConfigFile, json_str);
+        }
 #endif
 
         foreach (Camera c in TargetCamera)
@@ -117,6 +133,7 @@ public class StypeGripClient : MonoBehaviour
             }
         }
 
+        Debug.Log(config.RemoteIp);
         netReader.Connect(config, ringBuffer);
         ringBuffer.ResetDrops();
     }
