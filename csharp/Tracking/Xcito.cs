@@ -66,7 +66,8 @@ namespace Tracking
 
                 while (threadRunning)
                 {
-                    Thread.Sleep(read_interval_ms);
+                    if (read_interval_ms > 0)
+                        Thread.Sleep(read_interval_ms);
 
                     if (client.Available < 1)
                         continue;
