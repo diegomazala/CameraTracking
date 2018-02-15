@@ -133,7 +133,6 @@ public class StypeGripClient : MonoBehaviour
             }
         }
 
-        Debug.Log(config.RemoteIp);
         netReader.Connect(config, ringBuffer);
         ringBuffer.ResetDrops();
     }
