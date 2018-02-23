@@ -3,11 +3,12 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 
-
+using StypeGripPacket = Tracking.StypeGrip.PacketHF;
+//using StypeGripPacket = Tracking.StypeGrip.PacketA5;
 
 public class TrackingApp
 {
-    public static void PrintData(Tracking.StypeGrip.PacketHF packet)
+    public static void PrintData(StypeGripPacket packet)
     {
         System.Console.WriteLine("---------------------------------------------------");
         System.Console.WriteLine("Counter: {0}", packet.Counter);
@@ -22,7 +23,7 @@ public class TrackingApp
     }
 
 
-    public static void PrintStats(Tracking.RingBuffer<Tracking.StypeGrip.PacketHF> ringBuffer)
+    public static void PrintStats(Tracking.RingBuffer<StypeGripPacket> ringBuffer)
     {
         System.Console.WriteLine("---------------------------------------------------");
         System.Console.WriteLine("Time   : {0}", DateTime.Now);
@@ -85,10 +86,10 @@ public class TrackingApp
         PrintConfig(config);
 
 
-        Tracking.INetReader<Tracking.StypeGrip.PacketHF> netReader
-            //= new Tracking.StypeGrip.NetReaderAsync<Tracking.StypeGrip.PacketHF>();
-            = new Tracking.StypeGrip.NetReader<Tracking.StypeGrip.PacketHF>();
-        Tracking.RingBuffer<Tracking.StypeGrip.PacketHF> ringBuffer = new Tracking.RingBuffer<Tracking.StypeGrip.PacketHF>(config.Delay);
+        Tracking.INetReader<StypeGripPacket> netReader
+            //= new Tracking.StypeGrip.NetReaderAsync<StypeGripPacket>();
+            = new Tracking.StypeGrip.NetReader<StypeGripPacket>();
+        Tracking.RingBuffer<StypeGripPacket> ringBuffer = new Tracking.RingBuffer<StypeGripPacket>(config.Delay);
 
         netReader.Config = config;
         netReader.Buffer = ringBuffer;
