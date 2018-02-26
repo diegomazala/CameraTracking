@@ -13,6 +13,7 @@ namespace Tracking
         public int Delay = 0;
         public int ReadIntervalMs = 10;
         public bool ConsumeWhileAvailable = true;
+        public float FrameRatePerSecond = 59.94f;
 
         public static string FileName = "Tracking.json";
         
@@ -57,7 +58,16 @@ namespace Tracking
         protected byte[] data = null;
 
         // The id/counter of the package
-        public abstract uint Counter { get; }
+        long _Counter;
+        public virtual long Counter { get { return _Counter; } set { _Counter = value; } }
+
+        // Timecode data
+        protected long _TimeCode;
+        public virtual long Timecode
+        {
+            get { return _TimeCode; }
+            protected set { _TimeCode = value; }
+        }
 
         // Verify if the package is valid
         public abstract bool IsValid { get; }
@@ -70,8 +80,9 @@ namespace Tracking
         int Delay { get; set; }
         void Insert(T packet);
         T Packet { get; }
+        T LastPacket { get; }
         T GetPacket(int index);
-        uint Drops { get; }
+        long Drops { get; set; }
         void ResetDrops();
     }
 
@@ -81,8 +92,8 @@ namespace Tracking
     {
         public const int MinSize = 2;   // 2 is the minimum value (2 fields)
         private CircularBuffer<T> buffer;
-        private uint dropCount;
-        private uint lastPacketCounter;
+        private long dropCount;
+        private long lastPacketCounter;
 
 
         public RingBuffer(int size)
@@ -121,6 +132,14 @@ namespace Tracking
             }
         }
 
+        public T LastPacket
+        {
+            get
+            {
+                return buffer[buffer.Count - 1];
+            }
+        }
+
 
         public T GetPacket(int index)
         {
@@ -141,9 +160,10 @@ namespace Tracking
         }
 
 
-        public uint Drops
+        public long Drops
         {
             get { return dropCount; }
+            set { dropCount = value; }
         }
 
 
@@ -181,6 +201,16 @@ namespace Tracking
         public virtual int ReadNow()
         {
             return 0;
+        }
+
+        protected virtual void OnReceiveData(byte[] received_data)
+        {
+            if (received_data.Length > 0)
+            {
+                Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
+                PackageSize = received_data.Length;
+                TotalCounter++;
+            }
         }
     }
 
@@ -303,19 +333,21 @@ namespace Tracking
                     continue;
 
                 byte[] received_data = client.Receive(ref remoteEP);
+                lock (threadLocked)
+                {
+                    OnReceiveData(client.Receive(ref remoteEP));
+                }
+
 
                 if (consume_while_available)
                 {
                     while (client.Available > 0)
-                        received_data = client.Receive(ref remoteEP);
-                }
-
-                lock (threadLocked)
-                {
-                    PackageSize = received_data.Length;
-                    TotalCounter++;
-
-                    Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
+                    {
+                        lock (threadLocked)
+                        {
+                            OnReceiveData(client.Receive(ref remoteEP));
+                        }
+                    }
                 }
             }
         }
@@ -406,20 +438,19 @@ namespace Tracking
                 return 0;
 
             byte[] received_data = client.Receive(ref remoteEP);
+            OnReceiveData(received_data);
 
             if (consume_while_available)
             {
                 while (client.Available > 0)
-                    received_data = client.Receive(ref remoteEP);
+                {
+                    OnReceiveData(client.Receive(ref remoteEP));
+                }
             }
-
-            PackageSize = received_data.Length;
-            TotalCounter++;
-
-            Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
 
             return received_data.Length;
         }
+
     }
 
 
@@ -529,7 +560,7 @@ namespace Tracking
             {
                 IPEndPoint wantedIpEndPoint = (IPEndPoint)state.RemoteEndPoint;
                 IPEndPoint receivedIpEndPoint = (IPEndPoint)state.LocalEndPoint;
-                System.Byte[] data = clnt.EndReceive(ar, ref receivedIpEndPoint);
+                System.Byte[] received_data = clnt.EndReceive(ar, ref receivedIpEndPoint);
 
                 
                 
@@ -538,8 +569,7 @@ namespace Tracking
                 bool isRightPort = (wantedIpEndPoint.Port == receivedIpEndPoint.Port) || wantedIpEndPoint.Port == 0;
                 if (isRightHost && isRightPort)
                 {
-                    TotalCounter++;
-                    //buffer.Insert((T)System.Activator.CreateInstance(typeof(T), data), Counter);
+                    OnReceiveData(received_data);
                 }
 
                 // Restart listening for udp data packages

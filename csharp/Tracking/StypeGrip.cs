@@ -13,6 +13,8 @@ namespace Tracking
         public class Config : Tracking.Config
         {
             public float ImageScale = 1.0f;   // Oversize image to compensate distortion
+            public int ImageWidth = 1920;
+            public int ImageHeight = 1080;
 
             public Config()
             {
@@ -113,8 +115,7 @@ namespace Tracking
 
 
             // Timecode data
-            long _TimeCode;
-            public long Timecode
+            public override long Timecode
             {
                 get
                 {
@@ -124,11 +125,12 @@ namespace Tracking
                     return _TimeCode;
                 }
 
-                private set { _TimeCode = value; }
+                protected set { _TimeCode = value; }
             }
 
 
             // Packet ordinary number, start at 0 and loop back when reaches 255
+#if false
             public override uint Counter
             {
                 get
@@ -136,7 +138,7 @@ namespace Tracking
                     return data[DataIndex.PackageNumber];
                 }
             }
-
+#endif
 
             // Position in meters
             public UnityEngine.Vector3 Position
@@ -146,7 +148,7 @@ namespace Tracking
                     return new UnityEngine.Vector3(
                         System.BitConverter.ToSingle(data, DataIndex.X),
                         System.BitConverter.ToSingle(data, DataIndex.Y),
-                        System.BitConverter.ToSingle(data, DataIndex.Z));
+                        -System.BitConverter.ToSingle(data, DataIndex.Z));  // invert z
                 }
             }
 
@@ -157,19 +159,19 @@ namespace Tracking
                     return new float[]{
                         System.BitConverter.ToSingle(data, DataIndex.X),
                         System.BitConverter.ToSingle(data, DataIndex.Y),
-                        System.BitConverter.ToSingle(data, DataIndex.Z)};
+                        -System.BitConverter.ToSingle(data, DataIndex.Z)};  // invert z
                 }
             }
 
 
-            // Rotation (pan, tilt, roll) in euler angles
+            // Rotation (tilt, pan, roll) in euler angles
             public UnityEngine.Vector3 EulerAngles
             {
                 get
                 {
                     return new UnityEngine.Vector3(
                         System.BitConverter.ToSingle(data, DataIndex.Tilt),
-                        System.BitConverter.ToSingle(data, DataIndex.Pan),
+                        -System.BitConverter.ToSingle(data, DataIndex.Pan),  // invert pan
                         System.BitConverter.ToSingle(data, DataIndex.Roll));
                 }
             }
@@ -180,20 +182,28 @@ namespace Tracking
                 {
                     return new float[]
                     {
-                        System.BitConverter.ToSingle(data, DataIndex.Pan),
+                        -System.BitConverter.ToSingle(data, DataIndex.Pan),
                         System.BitConverter.ToSingle(data, DataIndex.Tilt),
                         System.BitConverter.ToSingle(data, DataIndex.Roll)
                     };
                 }
             }
 
-
             // Rotation (pan, tilt, roll)
             public UnityEngine.Quaternion Rotation
             {
                 get
                 {
-                    return UnityEngine.Quaternion.Euler(EulerAngles);
+                    float pan = -System.BitConverter.ToSingle(data, DataIndex.Pan); // invert pan 
+                    float tilt = System.BitConverter.ToSingle(data, DataIndex.Tilt);
+                    float roll = System.BitConverter.ToSingle(data, DataIndex.Roll);
+                    UnityEngine.Quaternion x = UnityEngine.Quaternion.AngleAxis(tilt, UnityEngine.Vector3.right);
+                    UnityEngine.Quaternion y = UnityEngine.Quaternion.AngleAxis(pan, UnityEngine.Vector3.up);
+                    UnityEngine.Quaternion z = UnityEngine.Quaternion.AngleAxis(roll, UnityEngine.Vector3.forward);
+
+                    // This is not the default rotation order in unity
+                    // Pan * Tilt * Roll
+                    return y * x * z;
                 }
             }
 
@@ -346,7 +356,7 @@ namespace Tracking
                 for (int i = 0; i < fov_y.Length; ++i)
                     data[DataIndex.FovY + i] = fov_y[i];
 
-                //_TimeCode = System.DateTime.Now.Ticks;
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
@@ -354,7 +364,8 @@ namespace Tracking
             {
                 data = new byte[DataIndex.Total];
                 System.Array.Copy(packet_data, data, packet_data.Length);
-                //_TimeCode = System.DateTime.Now.Ticks;
+
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
@@ -389,18 +400,10 @@ namespace Tracking
 
 
             // Timecode data
-            long _TimeCode;
-            public long Timecode
+            public override long Timecode
             {
                 get { return _TimeCode; }
-                set { _TimeCode = value; }
-            }
-
-
-            // Packet ordinary number, start at 0 and loop back when reaches 255
-            public override uint Counter
-            {
-                get { return 0; }
+                protected set { _TimeCode = value; }
             }
 
 
@@ -586,7 +589,6 @@ namespace Tracking
                 byte[] received_data = client.Receive(ref receivedEP);
 
 
-
                 if (received_data.Length == PacketHF.DataIndex.Total 
                     || received_data.Length == PacketA5.DataIndex.Total)    //  Is a valid packet
                 {
@@ -623,6 +625,7 @@ namespace Tracking
 
                     lock (threadLocked)
                     {
+                        
                         Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
                         TotalCounter++;
 

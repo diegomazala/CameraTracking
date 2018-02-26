@@ -159,22 +159,29 @@ namespace Tracking
             public Packet()
             {
                 Params = new CameraParams();
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
             public Packet(byte[] packet_data_params)
             {
                 Params = new CameraParams(packet_data_params);
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
             // Packet ordinary number, start at 0 and loop back when reaches 255
-            public override uint Counter
+            public override long Counter
             {
-                get { return Params.Counter; }
+                get
+                {
+                    uint counter = Params.Counter;
+                    return System.Convert.ToInt64(counter);
+                }
             }
 
-            
+
+
             // Verify if the package is valid
             public override bool IsValid
             {

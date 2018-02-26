@@ -4,8 +4,8 @@ using System.Collections;
 
 public class XcitoClient : MonoBehaviour
 {
-    private uint LastPacketCounter = 0;
-    private uint LastDropCounter = 0;
+    private long LastPacketCounter = 0;
+    private long LastDropCounter = 0;
     public Camera[] TargetCamera = { null, null };
 
     public Tracking.Xcito.Config config;

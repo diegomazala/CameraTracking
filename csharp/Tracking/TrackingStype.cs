@@ -12,7 +12,7 @@ public class TrackingApp
     {
         System.Console.WriteLine("---------------------------------------------------");
         System.Console.WriteLine("Counter: {0}", packet.Counter);
-        System.Console.WriteLine("Time   : {0}", packet.Timecode);
+        System.Console.WriteLine("Time   : {0}", new TimeSpan(packet.Timecode).ToString());
         System.Console.WriteLine("Pos    : {0}, {1}, {2}", packet.XYZ[0], packet.XYZ[1], packet.XYZ[2]);
         System.Console.WriteLine("Rot    : {0}, {1}, {2}", packet.PTR[0], packet.PTR[1], packet.PTR[2]);
         System.Console.WriteLine("Fov    : {0} {1}", packet.FovX, packet.FovY);
@@ -185,7 +185,7 @@ public class TrackingApp
         config.LocalIp = "0.0.0.0";
         config.RemoteIp = "0.0.0.0"; //!"224.0.0.2";
         config.Multicast = false;
-        config.Port = 6301;
+        config.Port = 6302;
         config.Delay = 0;
         config.ReadIntervalMs = 10;
         config.ConsumeWhileAvailable = false;
@@ -253,8 +253,9 @@ public class TrackingApp
                 PrintData(ringBuffer.Packet);
             }
 
-
-            if (netReader.ReadNow() > 0)
+            var data_size = netReader.ReadNow();
+#if false
+            if (data_size > 0)
             {
                 long now = ringBuffer.Packet.Timecode;
                 long elapsedTicks = now - last_timecode;
@@ -266,7 +267,8 @@ public class TrackingApp
                 Console.WriteLine("   {0:N0} milliseconds", elapsedSpan.Milliseconds);
                 Console.WriteLine("   {0:N2} seconds", elapsedSpan.TotalSeconds);
                 Console.WriteLine();
-            }
+        }
+#endif
 
         }
 

@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections;
 
-//using StypeGripPacket = Tracking.StypeGrip.PacketHF;
-using StypeGripPacket = Tracking.StypeGrip.PacketA5;
+using StypeGripPacket = Tracking.StypeGrip.PacketHF;
+//using StypeGripPacket = Tracking.StypeGrip.PacketA5;
 
 public class StypeGripClientUI : MonoBehaviour
 {
@@ -17,7 +17,7 @@ public class StypeGripClientUI : MonoBehaviour
     public UnityEngine.UI.InputField port;
     public UnityEngine.UI.InputField delay;
     public UnityEngine.UI.Text dropsText;
-    private uint lastDropCount = 0;
+    private long lastDropCount = 0;
 
     public UnityEngine.UI.Image statusImage;
     public UnityEngine.UI.Text statusText;
@@ -140,5 +140,16 @@ public class StypeGripClientUI : MonoBehaviour
 
         for (int i = it; i < MaxCountersUI; ++i)
             bufferCounterText[i].text = "x";
+
+        for ( it = 1; it < netReader.Buffer.Length; ++it)
+        {
+            bufferCounterText[it].color = Color.gray;
+
+            long counter_diff = netReader.Buffer.GetPacket(it).Counter - netReader.Buffer.GetPacket(it - 1).Counter;
+            if (counter_diff != 1)
+                bufferCounterText[it].color = new Color(0.5f, 0.0f, 0.0f);
+        }
+
+        
     }
 }

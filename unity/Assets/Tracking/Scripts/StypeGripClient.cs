@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-//using StypeGripPacket = Tracking.StypeGrip.PacketHF;
-using StypeGripPacket = Tracking.StypeGrip.PacketA5;
+using StypeGripPacket = Tracking.StypeGrip.PacketHF;
+//using StypeGripPacket = Tracking.StypeGrip.PacketA5;
+
 
 public class StypeGripClient : MonoBehaviour
 {
@@ -20,7 +21,15 @@ public class StypeGripClient : MonoBehaviour
     public Vector3 AnglesMultiplier = Vector3.one;
     public Vector3 PositionMultiplier = Vector3.one;
 
-       
+    private long lastFrameTimecode = 0;
+    public float TimeBetweenFields = 0;
+    public float TimeBetweenFrames = 0;
+
+    public UnityEngine.UI.Text ScreenText = null;
+
+
+    
+
     private StypeGripClientUI stypeClientUI = null;
     public StypeGripClientUI UI
     {
@@ -95,7 +104,8 @@ public class StypeGripClient : MonoBehaviour
 
     void Awake()
     {
-        netReader = new Tracking.StypeGrip.NetReader<StypeGripPacket>();
+        //netReader = new Tracking.StypeGrip.NetReader<StypeGripPacket>();
+        netReader = new Tracking.StypeGrip.NetReaderSync<StypeGripPacket>();
         netReader.Config = config;
         ringBuffer = new Tracking.RingBuffer<StypeGripPacket>(config.Delay);
         netReader.Buffer = ringBuffer;
@@ -138,6 +148,14 @@ public class StypeGripClient : MonoBehaviour
 
         netReader.Connect(config, ringBuffer);
         ringBuffer.ResetDrops();
+
+        for (int field = 0; field < TargetCamera.Length; ++field)
+        {
+            Camera cam = TargetCamera[field];
+            StypeGripDistortion dist = cam.GetComponent<StypeGripDistortion>();
+            if (dist != null)
+                dist.Oversize = config.ImageScale;
+        }
     }
 
 
@@ -151,27 +169,14 @@ public class StypeGripClient : MonoBehaviour
     public Vector3 StypeAngles = Vector3.one;
     public Quaternion StypeQuaternion = Quaternion.identity;
 
-    public bool applyCCDShift = true;
-    public bool applyDistortion = true;
-
     void Update()
     {
-        if (netReader.IsReading)
+        if (netReader.IsReading || netReader.ReadNow() > 0)
             UpdateCameras();
 
         PackSize = netReader.PackageSize;
         PackCount = netReader.TotalCounter;
 
-        if (Input.GetKeyDown(KeyCode.C))
-        {
-            applyCCDShift = !applyCCDShift;
-        }
-
-        if (Input.GetKeyDown(KeyCode.D))
-        {
-            applyDistortion = !applyDistortion;
-            Distortion = applyDistortion;
-        }
     }
 
 
@@ -179,6 +184,8 @@ public class StypeGripClient : MonoBehaviour
 
     void UpdateCameras()
     {
+        
+
         for (int field = 0; field < TargetCamera.Length; ++field)
         {
             Camera cam = TargetCamera[field];
@@ -194,27 +201,73 @@ public class StypeGripClient : MonoBehaviour
                 StypePosition = Packet.Position;
             }
 
-
-            transform.localRotation = EulerToQuaternion(
+            cam.transform.localRotation = EulerToQuaternion(
                 new Vector3(
                 StypeAngles.x * AnglesMultiplier.x,
                 StypeAngles.y * AnglesMultiplier.y,
                 StypeAngles.z * AnglesMultiplier.z), 
                 RotationOrder);
 
-            transform.localPosition = new Vector3(
-                transform.localPosition.x * PositionMultiplier.x,
-                transform.localPosition.y * PositionMultiplier.y,
-                transform.localPosition.z * PositionMultiplier.z
+            cam.transform.localPosition = new Vector3(
+                StypePosition.x * PositionMultiplier.x,
+                StypePosition.y * PositionMultiplier.y,
+                StypePosition.z * PositionMultiplier.z
                 );
             
             cam.aspect = (float)Packet.AspectRatio;
             cam.fieldOfView = (float)Packet.FovY;
 
-            if (applyDistortion)
-                ApplyDistortion(cam, field); // true = shift in pixels for A5 protocol
+            // A5 = shif_in_pixels = true
+            // HF = shif_in_pixels = false
+            bool shift_in_pixels = (Packet.GetType() == typeof(Tracking.StypeGrip.PacketA5));
+            ApplyDistortion(cam, field, shift_in_pixels); 
         }
+
         
+
+        if (TargetCamera.Length > 0)
+            TimeBetweenFields = (new System.TimeSpan(netReader.Buffer.GetPacket(1).Timecode - netReader.Buffer.GetPacket(0).Timecode).Milliseconds);
+
+        TimeBetweenFrames = (new System.TimeSpan(netReader.Buffer.GetPacket(0).Timecode - lastFrameTimecode).Milliseconds);
+
+        lastFrameTimecode = netReader.Buffer.GetPacket(1).Timecode;
+
+
+        // A5 protocol does not have counter 
+        long counter_sum = 0;
+        long start_counter = netReader.TotalCounter - netReader.Buffer.Length;
+        if (netReader.Buffer.Packet.GetType() == typeof(Tracking.StypeGrip.PacketA5))
+        {
+            var p_0 = netReader.Buffer.GetPacket(0);
+
+            for (int it = 0; it < netReader.Buffer.Length; ++it)
+            {
+                var p_it = netReader.Buffer.GetPacket(it);
+                double elapsedtime_ms = (new System.TimeSpan(p_it.Timecode - p_0.Timecode).TotalMilliseconds);
+                double expected_interval_ms = 1000.0 / config.FrameRatePerSecond;
+
+                long id_counter = start_counter + System.Convert.ToInt64(elapsedtime_ms / expected_interval_ms);
+                p_it.Counter = System.Convert.ToChar(id_counter);
+            }
+
+            for (int it = 1; it < netReader.Buffer.Length; ++it)
+                counter_sum += netReader.Buffer.GetPacket(it).Counter - netReader.Buffer.GetPacket(it - 1).Counter;
+        }
+
+
+        string buffer_str = "Buffer: " + netReader.Buffer.Length.ToString();
+        for (int it = 0; it < netReader.Buffer.Length; ++it)
+            buffer_str += " " + netReader.Buffer.GetPacket(it).Counter.ToString();
+
+        if (ScreenText != null)
+        {
+            ScreenText.text = TimeBetweenFields.ToString("Fields: 0.000") + " " + TimeBetweenFrames.ToString("Frames: 0.000") + " " + buffer_str + " - " + counter_sum;
+
+            if (counter_sum != netReader.Buffer.Length - 1)
+                ScreenText.color = Color.red;
+            else
+                ScreenText.color = Color.green;
+        }
     }
 
 
@@ -243,8 +296,9 @@ public class StypeGripClient : MonoBehaviour
     }
 
 
-
-    void ApplyDistortion(Camera cam, int field)
+    // A5 = shif_in_pixels = true
+    // HF = shif_in_pixels = false
+    void ApplyDistortion(Camera cam, int field, bool shift_in_pixels)
     {
         StypeGripDistortion dist = cam.GetComponent<StypeGripDistortion>();
         if (dist != null)
@@ -254,139 +308,24 @@ public class StypeGripClient : MonoBehaviour
             dist.PA_w = Packet.ChipWidth;
             dist.AR = Packet.AspectRatio;
 
-            dist.CSX = Packet.CenterX;
-            dist.CSY = Packet.CenterY;
-
             dist.K1 = Packet.K1;
             dist.K2 = Packet.K2;
 
-            dist.Oversize = config.ImageScale;
+            if (shift_in_pixels)
+            {
+                dist.CSX = Packet.CenterX / (float)config.ImageWidth;
+                dist.CSY = Packet.CenterY / (float)config.ImageHeight;
+            }
+            else
+            {
+                dist.CSX = Packet.CenterX;
+                dist.CSY = Packet.CenterY;
+            }
+
+            
         }
         
     }
-
+    
 }
 
-
-#if false
-///////////////////////////////////////
-////////////// XCITO.CS ///////////////
-    Matrix4x4 modelview = netReader.Buffer.GetPacket(field).Params.Transform;
-    Quaternion rot = QuaternionFromMatrix(modelview);
-    rot.z *= -1.0f;
-    rot.w *= -1.0f;
-
-    Vector3 pos = modelview.GetColumn(3);
-    pos.z *= -1.0f;
-
-    cam.transform.localRotation = rot;
-    cam.transform.localPosition = pos;
-
-
-///////////////////////////////////////
-///////////////////////////////////////
-t.localRotation = new Quaternion(-q.x, -q.z, q.y, -q.w);
-
-static void RotationFix180 (Transform t)
-{
-    Vector3 localEulerAngles = t.localEulerAngles;		
-		
-    localEulerAngles.x = -localEulerAngles.x;
-    localEulerAngles.z = -localEulerAngles.z;
-		
-    t.localEulerAngles = localEulerAngles;
-    Quaternion q = t.localRotation;		
-    t.localRotation = new Quaternion(-q.x, q.y, -q.z, q.w);
-}
-
-///////////////////////////////////////
-///////////////////////////////////////
-
-rot = Quaternion.Inverse(rot);
-{
-    // Convert the rotation from Blender to Unity 
-	keysX[k].value = -rot.x;
-	keysY[k].value = -rot.z;
-	keysZ[k].value = rot.y;
-	keysW[k].value = -rot.w;
-}
-
-///////////////////////////////////////
-///////////////////////////////////////
-rot = new Quaternion (-rot.x, -rot.z, rot.y, -rot.w);
-if (m_zReverse)
-    rot = new Quaternion (-rot.x, rot.y, -rot.z, rot.w);
-
-///////////////////////////////////////
-///////////////////////////////////////
-var inputRot = Vector3( parseFloat(lineEntry[i]), parseFloat(lineEntry[i+1]), parseFloat(lineEntry[i+2]) );
-var rot = Quaternion.Euler( inputRot );
-var changedRot = Quaternion( rot.x , -rot.y, rot.z , rot.w );
-
-///////////////////////////////////////
-///////////////////////////////////////
-??
-var changedRot = Quaternion( rot.x , -rot.y, rot.z , rot.w );
-??
-var changedRot = Quaternion( -rot.x , rot.y, rot.z, -rot.w );
-
-///////////////////////////////////////
-///////////////////////////////////////
-var reOrdered = ZXYtoXYZ( Vector3(recordObj.eulerAngles.x, -recordObj.eulerAngles.y, -recordObj.eulerAngles.z) );
-function ZXYtoXYZ(v : Vector3)  
-   var qx = Quaternion.AngleAxis(v.x, Vector3.right);
-   var qy = Quaternion.AngleAxis(v.y, Vector3.up);
-   var qz = Quaternion.AngleAxis(v.z, Vector3.forward);
-   var qq = qz * qy * qx;
-   return qq.eulerAngles;
-}
-
-
-///////////////////////////////////////
-///////////////////////////////////////
-var qRot : Quaternion = Quaternion.Euler(mayaRotation); // Convert Vector3 output from Maya to Quaternion
-var mirrorQuat : Quaternion = Quaternion(-qRot.x, qRot.y, qRot.z, -qRot.w); // Mirror the quaternion on X  W
-var reOrderedEulers : Vector3 = XYZtoZXY(mirrorQuat.eulerAngles); // Reorder XYZ (maya) to ZXY (unity)
-theObject.transform.localEulerAngles = Vector3(reOrderedEulers.x, reOrderedEulers.y, reOrderedEulers.z);
-theObject.transform.Rotate(new Vector3(0, 180, 0));
- 
-static function XYZtoZXY(v : Vector3) : Vector3 {
-   var qx : Quaternion = Quaternion.AngleAxis(v.x, Vector3.right);
-   var qy : Quaternion = Quaternion.AngleAxis(v.y, Vector3.up);
-   var qz : Quaternion = Quaternion.AngleAxis(v.z, Vector3.forward);
-   var qq : Quaternion = qz * qx * qy;
-   return qq.eulerAngles;
-}
-
-
-///////////////////////////////////////
-///////////////////////////////////////
-static function MayaRotationToUnity(rotation : Vector3) : Quaternion {
-   var flippedRotation : Vector3 = Vector3(rotation.x, -rotation.y, -rotation.z); // flip Y and Z axis for right->left handed conversion
-   // convert XYZ to ZYX
-   var qx : Quaternion = Quaternion.AngleAxis(flippedRotation.x, Vector3.right);
-   var qy : Quaternion = Quaternion.AngleAxis(flippedRotation.y, Vector3.up);
-   var qz : Quaternion = Quaternion.AngleAxis(flippedRotation.z, Vector3.forward);
-   var qq : Quaternion = qz * qy * qx ; // this is the order
-   return qq;
-}
-
-///////////////////////////////////////
-///////////////////////////////////////
-
-For the rotation, I found the following : 
-If you have your rotations around each axis, 
-and applied in the order : X, Y then Z, 
-in a right handed system, then in a left handed system, 
-it will be : X, -Y, -Z.
-
-
-///////////////////////////////////////
-///////////////////////////////////////
-
-I believe (having experience with Kinect & Unity3d) that what he wants is 
-the same Rotation in a coordinate space where Z is inverted. 
-That comes down to mirroring around the XY plane. 
-To mirror a quaternion around the XY plane, you need to negate the Z value and the W value.
-
-#endif

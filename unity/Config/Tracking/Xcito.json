@@ -1,8 +1,0 @@
-{
-    "LocalIp": "0.0.0.0",
-    "RemoteIp": "0.0.0.0",
-    "Port": 12000,
-    "Delay": 5,
-    "ReadIntervalMs": 10,
-    "ConsumeWhileAvailable": true
-}

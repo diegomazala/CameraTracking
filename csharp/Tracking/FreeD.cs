@@ -44,6 +44,8 @@ namespace Tracking
             public Packet()
             {
                 data = new byte[DataIndex.Total];
+
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
@@ -51,6 +53,8 @@ namespace Tracking
             {
                 data = new byte[DataIndex.Total];
                 System.Array.Copy(packet_data, data, packet_data.Length);
+
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
@@ -63,13 +67,7 @@ namespace Tracking
                 }
             }
 
-            // Packet ordinary number, start at 0 and loop back when reaches 255
-            public override uint Counter
-            {
-                get { return 0; }
-            }
-
-
+            
             // Fixed value: 0x0F
             public char MessageType
             {

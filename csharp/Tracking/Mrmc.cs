@@ -53,6 +53,8 @@ namespace Tracking
                 data = new byte[DataIndex.Total];
                 //TimeTicks = TimeWatch.ElapsedTicks;
                 TimeMilliseconds = TimeWatch.ElapsedMilliseconds;
+
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
@@ -65,6 +67,8 @@ namespace Tracking
                 System.Array.Copy(packet_data, data, packet_data.Length);
                 //TimeTicks = TimeWatch.ElapsedTicks;
                 TimeMilliseconds = TimeWatch.ElapsedMilliseconds;
+
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
@@ -78,11 +82,12 @@ namespace Tracking
             }
 
 
-            public override uint Counter
+            public override long Counter
             {
                 get
                 {
-                    return data[DataIndex.Counter];
+                    uint counter = data[DataIndex.Counter];
+                    return System.Convert.ToInt64(counter);
                 }
             }
 
