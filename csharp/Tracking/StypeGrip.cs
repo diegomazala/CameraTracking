@@ -68,6 +68,8 @@ namespace Tracking
                 byte[] chip_width = System.BitConverter.GetBytes(9.59f);       // Setup chip width
                 for (int i = 0; i < chip_width.Length; ++i)
                     data[DataIndex.ChipWidth + i] = chip_width[i];
+
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
@@ -75,6 +77,8 @@ namespace Tracking
             {
                 data = new byte[DataIndex.Total];
                 System.Array.Copy(packet_data, data, packet_data.Length);
+
+                Timecode = System.DateTime.Now.Ticks;
             }
 
 
@@ -109,13 +113,18 @@ namespace Tracking
 
 
             // Timecode data
-            public int Timecode
+            long _TimeCode;
+            public long Timecode
             {
                 get
                 {
-                    byte[] time = { 0, data[DataIndex.Timecode], data[DataIndex.Timecode + 1], data[DataIndex.Timecode + 2] };
-                    return System.BitConverter.ToInt32(time, 0);
+                    //byte[] time = { 0, data[DataIndex.Timecode], data[DataIndex.Timecode + 1], data[DataIndex.Timecode + 2] };
+                    //_TimeCode = System.Convert.ToInt64(System.BitConverter.ToInt32(time, 0));
+                    //return System.Convert.ToInt64(System.BitConverter.ToInt32(time, 0));
+                    return _TimeCode;
                 }
+
+                private set { _TimeCode = value; }
             }
 
 
@@ -165,14 +174,16 @@ namespace Tracking
                 }
             }
 
-            public float[] PanTiltRoll
+            public float[] PTR
             {
                 get
                 {
-                    return new float[]{
+                    return new float[]
+                    {
                         System.BitConverter.ToSingle(data, DataIndex.Pan),
                         System.BitConverter.ToSingle(data, DataIndex.Tilt),
-                        System.BitConverter.ToSingle(data, DataIndex.Roll)};
+                        System.BitConverter.ToSingle(data, DataIndex.Roll)
+                    };
                 }
             }
 
@@ -334,6 +345,8 @@ namespace Tracking
                 byte[] fov_y = System.BitConverter.GetBytes(45.0f);              // setup fov_y
                 for (int i = 0; i < fov_y.Length; ++i)
                     data[DataIndex.FovY + i] = fov_y[i];
+
+                //_TimeCode = System.DateTime.Now.Ticks;
             }
 
 
@@ -341,6 +354,7 @@ namespace Tracking
             {
                 data = new byte[DataIndex.Total];
                 System.Array.Copy(packet_data, data, packet_data.Length);
+                //_TimeCode = System.DateTime.Now.Ticks;
             }
 
 
@@ -375,9 +389,11 @@ namespace Tracking
 
 
             // Timecode data
-            public int Timecode
+            long _TimeCode;
+            public long Timecode
             {
-                get { return 0; }
+                get { return _TimeCode; }
+                set { _TimeCode = value; }
             }
 
 
@@ -400,6 +416,28 @@ namespace Tracking
                 }
             }
 
+            public float[] XYZ
+            {
+                get
+                {
+                    return new float[]{
+                        System.BitConverter.ToSingle(data, DataIndex.X),
+                        System.BitConverter.ToSingle(data, DataIndex.Y),
+                        System.BitConverter.ToSingle(data, DataIndex.Z)};
+                }
+            }
+
+            
+            public float[] PTR
+            {
+                get
+                {
+                    return new float[]{
+                        System.BitConverter.ToSingle(data, DataIndex.Pan),
+                        System.BitConverter.ToSingle(data, DataIndex.Tilt),
+                        System.BitConverter.ToSingle(data, DataIndex.Roll)};
+                }
+            }
 
             // Rotation (pan, tilt, roll) in euler angles
             public UnityEngine.Vector3 EulerAngles
@@ -580,8 +618,8 @@ namespace Tracking
                     bool isRightHost = (remoteEP.Address.Equals(receivedEP.Address)) || remoteEP.Address.Equals(IPAddress.Any);
                     bool isRightPort = (remoteEP.Port == receivedEP.Port) || remoteEP.Port == 0;
 
-                    if (!isRightHost || !isRightPort)
-                        continue;
+                    //if (!isRightHost || !isRightPort)
+                    //    continue;
 
                     lock (threadLocked)
                     {
@@ -590,7 +628,7 @@ namespace Tracking
 
                         //System.Console.WriteLine(" ===========================> {0}", received_data.Length);
                         //string[] words = ASCIIEncoding.ASCII.GetString(received_data, 0, received_data.Length).Split(' ');
-                        ////string[] words = ASCIIEncoding.ASCII.GetString(received_data, 9, received_data.Length - 9).Split(' ');
+                        //string[] words = ASCIIEncoding.ASCII.GetString(received_data, 9, received_data.Length - 9).Split(' ');
                         //for (int i = 0; i < words.Length; ++i)
                         //{
                         //    System.Console.WriteLine("{0} - {1}", i, words[i]);
@@ -649,6 +687,22 @@ namespace Tracking
                     System.Console.WriteLine(e.ToString());
                 }
             }
+
+        }
+
+        [System.Serializable]
+        public class NetReaderSync<T> : Tracking.NetReaderSync<T>
+        {
+            public override void Connect(Tracking.Config config, Tracking.IRingBuffer<T> ringBuffer)
+            {
+                base.Connect(config, ringBuffer);
+
+                // Wait a bit to reset the number of drops in ring buffer
+                Thread.Sleep(50);
+                Buffer.ResetDrops();
+            }
+
+            
 
         }
     }   // end StypeGrip namespace

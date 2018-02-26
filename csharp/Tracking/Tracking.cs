@@ -8,6 +8,7 @@ namespace Tracking
     {
         public string LocalIp = "0.0.0.0";
         public string RemoteIp = "0.0.0.0";
+        public bool Multicast = false;
         public int Port = 12000; //6301;
         public int Delay = 0;
         public int ReadIntervalMs = 10;
@@ -176,6 +177,11 @@ namespace Tracking
         {
             Connect(Config, Buffer);
         }
+
+        public virtual int ReadNow()
+        {
+            return 0;
+        }
     }
 
 
@@ -214,7 +220,17 @@ namespace Tracking
 
                 localEP = new IPEndPoint(IPAddress.Parse(Config.LocalIp), Config.Port);
                 remoteEP = new IPEndPoint(IPAddress.Parse(Config.RemoteIp), 0);
-                client = new UdpClient(localEP);
+
+                if (Config.Multicast)
+                {
+                    client = new UdpClient();
+                    client.Client.Bind(localEP);
+                    client.JoinMulticastGroup(IPAddress.Parse(Config.RemoteIp));
+                }
+                else
+                {
+                    client = new UdpClient(localEP);
+                }
 
                 readThread = new Thread(ReadDataThread) { Name = "Read Thread" };
                 readThread.Start();
@@ -306,6 +322,107 @@ namespace Tracking
     }
 
 
+    [System.Serializable]
+    public class NetReaderSync<T> : INetReader<T>
+    {
+        public override void Connect(Tracking.Config config, Tracking.IRingBuffer<T> ringBuffer)
+        {
+            try
+            {
+                Disconnect();
+
+                Config = config;
+                Buffer = ringBuffer;
+
+                if (Buffer == null)
+                {
+                    //UnityEngine.Debug.LogError("Missing reference to StpeGrip.RingBuffer");
+                    return;
+                }
+
+                if (Config == null)
+                {
+                    //UnityEngine.Debug.LogError("Missing reference to StypeGrip.Config");
+                    return;
+                }
+
+                // Update delay value
+                Buffer.Delay = Config.Delay;
+
+                localEP = new IPEndPoint(IPAddress.Parse(Config.LocalIp), Config.Port);
+                remoteEP = new IPEndPoint(IPAddress.Parse(Config.RemoteIp), 0);
+
+                if (Config.Multicast)
+                {
+                    client = new UdpClient();
+                    client.Client.Bind(localEP);
+                    client.JoinMulticastGroup(IPAddress.Parse(Config.RemoteIp));
+                }
+                else
+                {
+                    client = new UdpClient(localEP);
+                }
+
+            }
+            catch (System.Exception e)
+            {
+                System.Console.WriteLine(e.ToString());
+            }
+        }
+
+
+        public override void Disconnect()
+        {
+            try
+            {
+                if (client != null)
+                {
+                    client.Close();
+                    client = null;
+                }
+            }
+            catch (System.Exception e)
+            {
+                System.Console.WriteLine(e.ToString());
+            }
+        }
+
+
+        public override bool IsReading
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+
+        public override int ReadNow()
+        {
+            bool consume_while_available = Config.ConsumeWhileAvailable;
+            int read_interval_ms = Config.ReadIntervalMs;
+
+            if (client.Available < 1)
+                return 0;
+
+            byte[] received_data = client.Receive(ref remoteEP);
+
+            if (consume_while_available)
+            {
+                while (client.Available > 0)
+                    received_data = client.Receive(ref remoteEP);
+            }
+
+            PackageSize = received_data.Length;
+            TotalCounter++;
+
+            Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
+
+            return received_data.Length;
+        }
+    }
+
+
 
 
     internal class UdpState
@@ -352,11 +469,20 @@ namespace Tracking
 
                 localEP = new IPEndPoint(IPAddress.Parse(Config.LocalIp), Config.Port);
                 remoteEP = new IPEndPoint(IPAddress.Parse(Config.RemoteIp), 0);
-                client = new UdpClient(localEP);
+
+                if (Config.Multicast)
+                {
+                    client = new UdpClient();
+                    client.Client.Bind(localEP);
+                    client.JoinMulticastGroup(IPAddress.Parse(Config.RemoteIp));
+                }
+                else
+                {
+                    client = new UdpClient(localEP);
+                }
+
                 UdpState state = new UdpState(client, localEP, remoteEP);
 
-                //client = new UdpClient(Config.Port);
-                //UdpState state = new UdpState(client, (new IPEndPoint(IPAddress.Any, 0)));
 
                 // Start async receiving
                 client.BeginReceive(new System.AsyncCallback(DataReceived), state);
