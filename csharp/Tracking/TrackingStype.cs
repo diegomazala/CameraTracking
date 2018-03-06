@@ -60,15 +60,15 @@ public class TrackingApp
     }
 
     
-
-    public static void PrevMain(string[] args)
+    public static void Main(string[] args)
     {
         System.Console.WriteLine("Usage: TrackingApp.exe Host Port Delay ReadInterval ConsumeWhileAvailable");
         Tracking.StypeGrip.Config config = new Tracking.StypeGrip.Config();
-        config.LocalIp = "127.0.0.1";
-        config.RemoteIp = "0.0.0.0";
-        config.Port = 6301;
-        config.Delay = 5;
+        config.LocalIp = "0.0.0.0";
+        config.RemoteIp = "224.0.0.2";
+        config.Multicast = true;
+        config.Port = 6302;
+        config.Delay = 0;
         config.ReadIntervalMs = 10;
         config.ConsumeWhileAvailable = false;
 
@@ -80,6 +80,7 @@ public class TrackingApp
             System.Int32.TryParse(args[3], out config.Delay);
             System.Int32.TryParse(args[4], out config.ReadIntervalMs);
             System.Boolean.TryParse(args[5], out config.ConsumeWhileAvailable);
+            System.Boolean.TryParse(args[6], out config.Multicast);
         }
         else
         {
@@ -88,116 +89,7 @@ public class TrackingApp
 
         PrintConfig(config);
 
-
-        Tracking.INetReader<StypeGripPacket> netReader
-            //= new Tracking.StypeGrip.NetReaderAsync<StypeGripPacket>();
-            = new Tracking.StypeGrip.NetReader<StypeGripPacket>();
-        Tracking.RingBuffer<StypeGripPacket> ringBuffer = new Tracking.RingBuffer<StypeGripPacket>(config.Delay);
-
-        config.Port = 6302;
-        config.RemoteIp = "224.0.0.2";
-        netReader.Config = config;
-        netReader.Buffer = ringBuffer;
-
-        netReader.Connect(config, ringBuffer);
-        ringBuffer.ResetDrops();
-
-
-        PrintHelp();
-
-
-        bool exit = false;
-        bool continuous_print = false;
-
-        while(!exit)
-        {
-            if (System.Console.KeyAvailable)
-            {
-                System.ConsoleKey key_pressed = System.Console.ReadKey(true).Key;
-                if (key_pressed == System.ConsoleKey.Spacebar)
-                {
-                    continuous_print = !continuous_print;
-                }
-                else if (key_pressed == System.ConsoleKey.Enter)
-                {
-                    PrintData(ringBuffer.Packet);
-                    PrintStats(ringBuffer);
-                }
-                else if (key_pressed == System.ConsoleKey.C)
-                {
-                    System.Console.Clear();
-                }
-                else if (key_pressed == System.ConsoleKey.N)
-                {
-                    PrintConfig(config);
-                }
-                else if (key_pressed == System.ConsoleKey.H)
-                {
-                    PrintHelp();
-                }
-                else if (key_pressed == System.ConsoleKey.Escape)
-                {
-                    PrintStats(ringBuffer);
-                    exit = true;
-                }
-            }
-            else if (continuous_print)
-            {
-                PrintStats(ringBuffer);
-            }
-            
-        }
-
-        netReader.Disconnect();
-    }
-
-    public static void TutMain(string[] args)
-    {
-        //PrevMain(args);
-
-            UdpClient client = new UdpClient();
-
-            client.ExclusiveAddressUse = false;
-            IPEndPoint localEp = new IPEndPoint(IPAddress.Any, 6302);
-
-            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            client.ExclusiveAddressUse = false;
-
-            client.Client.Bind(localEp);
-
-            IPAddress multicastaddress = IPAddress.Parse("224.0.0.2");
-            client.JoinMulticastGroup(multicastaddress);
-
-            Console.WriteLine("Listening this will never quit so you will need to ctrl-c it");
-
-            while (true)
-            {
-                Byte[] data = client.Receive(ref localEp);
-                string strData = System.Text.Encoding.Unicode.GetString(data);
-                Console.WriteLine(strData);
-            }
-    }
-
-    public static void Main(string[] args)
-    {
-        System.Console.WriteLine("Usage: TrackingApp.exe Host Port Delay ReadInterval ConsumeWhileAvailable");
-        Tracking.StypeGrip.Config config = new Tracking.StypeGrip.Config();
-        config.LocalIp = "0.0.0.0";
-        config.RemoteIp = "0.0.0.0"; //!"224.0.0.2";
-        config.Multicast = false;
-        config.Port = 6302;
-        config.Delay = 0;
-        config.ReadIntervalMs = 10;
-        config.ConsumeWhileAvailable = false;
-
-
-        PrintConfig(config);
-
-
-        Tracking.INetReader<StypeGripPacket> netReader
-            //= new Tracking.StypeGrip.NetReaderAsync<StypeGripPacket>();
-            //= new Tracking.StypeGrip.NetReader<StypeGripPacket>();
-            = new Tracking.StypeGrip.NetReaderSync<StypeGripPacket>();
+        Tracking.INetReader<StypeGripPacket> netReader = new Tracking.StypeGrip.NetReader<StypeGripPacket>();
         Tracking.RingBuffer<StypeGripPacket> ringBuffer = new Tracking.RingBuffer<StypeGripPacket>(config.Delay);
 
         netReader.Config = config;
@@ -251,10 +143,11 @@ public class TrackingApp
             {
                 //PrintStats(ringBuffer);
                 PrintData(ringBuffer.Packet);
+                //System.Console.WriteLine("Time   : {0}", new TimeSpan(ringBuffer.Packet.Timecode).ToString());
             }
-
-            var data_size = netReader.ReadNow();
 #if false
+            var data_size = netReader.ReadNow();
+
             if (data_size > 0)
             {
                 long now = ringBuffer.Packet.Timecode;

@@ -1,8 +1,45 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Net;
+using System.Net.Sockets;
 
-using StypeGripPacket = Tracking.StypeGrip.PacketHF;
-//using StypeGripPacket = Tracking.StypeGrip.PacketA5;
+
+
+//using StypeGripPacket = Tracking.StypeGrip.PacketHF;
+using StypeGripPacket = Tracking.StypeGrip.PacketA5;
+
+[System.Serializable]
+public class StypeCameraParams
+{
+    public float x;
+    public float y;
+    public float z;
+    public float pan;
+    public float tilt;
+    public float roll;
+    public float fovx;
+    public float fovy;
+    public float focus;
+    public float k1;
+    public float k2;
+    public float centerx;
+    public float centery;
+
+
+    public void Save(string filename)
+    {
+        bool prettyPrint = true;
+        string json_str = UnityEngine.JsonUtility.ToJson(this, prettyPrint);
+        System.IO.File.WriteAllText(filename, json_str);
+    }
+
+    public void Load(string filename)
+    {
+        string json_str = System.IO.File.ReadAllText(filename);
+        if (json_str.Length > 0)
+            UnityEngine.JsonUtility.FromJsonOverwrite(json_str, this);
+    }
+}
 
 
 public class StypeGripClient : MonoBehaviour
@@ -26,9 +63,9 @@ public class StypeGripClient : MonoBehaviour
     public float TimeBetweenFrames = 0;
 
     public UnityEngine.UI.Text ScreenText = null;
+    public string frame_filename = "0871";
 
 
-    
 
     private StypeGripClientUI stypeClientUI = null;
     public StypeGripClientUI UI
@@ -104,11 +141,12 @@ public class StypeGripClient : MonoBehaviour
 
     void Awake()
     {
-        //netReader = new Tracking.StypeGrip.NetReader<StypeGripPacket>();
-        netReader = new Tracking.StypeGrip.NetReaderSync<StypeGripPacket>();
+        netReader = new Tracking.StypeGrip.NetReader<StypeGripPacket>();
+        //netReader = new Tracking.StypeGrip.NetReaderSync<StypeGripPacket>();
         netReader.Config = config;
         ringBuffer = new Tracking.RingBuffer<StypeGripPacket>(config.Delay);
         netReader.Buffer = ringBuffer;
+
     }
 
 
@@ -146,6 +184,7 @@ public class StypeGripClient : MonoBehaviour
             }
         }
 
+
         netReader.Connect(config, ringBuffer);
         ringBuffer.ResetDrops();
 
@@ -156,18 +195,22 @@ public class StypeGripClient : MonoBehaviour
             if (dist != null)
                 dist.Oversize = config.ImageScale;
         }
+
     }
 
 
     void OnDisable()
     {
+
         netReader.Disconnect();
+
     }
 
     public bool StypeUpdate = true;
     public Vector3 StypePosition = Vector3.one;
     public Vector3 StypeAngles = Vector3.one;
     public Quaternion StypeQuaternion = Quaternion.identity;
+
 
     void Update()
     {
@@ -177,15 +220,18 @@ public class StypeGripClient : MonoBehaviour
         PackSize = netReader.PackageSize;
         PackCount = netReader.TotalCounter;
 
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            SaveFrame();
+        }
+
     }
 
-
+    public bool shift_in_pixels = true;
 
 
     void UpdateCameras()
     {
-        
-
         for (int field = 0; field < TargetCamera.Length; ++field)
         {
             Camera cam = TargetCamera[field];
@@ -214,13 +260,16 @@ public class StypeGripClient : MonoBehaviour
                 StypePosition.z * PositionMultiplier.z
                 );
             
-            cam.aspect = (float)Packet.AspectRatio;
+            cam.aspect = (float)config.ImageWidth / (float)config.ImageHeight;
             cam.fieldOfView = (float)Packet.FovY;
 
             // A5 = shif_in_pixels = true
             // HF = shif_in_pixels = false
-            bool shift_in_pixels = (Packet.GetType() == typeof(Tracking.StypeGrip.PacketA5));
-            ApplyDistortion(cam, field, shift_in_pixels); 
+            //shift_in_pixels = (Packet.GetType() == typeof(Tracking.StypeGrip.PacketA5));
+            //ApplyDistortionStype(cam, field, shift_in_pixels);
+
+            ApplyCcdShift(cam, field, shift_in_pixels);
+            ApplyDistortionXcito(cam, field, shift_in_pixels);
         }
 
         
@@ -246,8 +295,7 @@ public class StypeGripClient : MonoBehaviour
                 double elapsedtime_ms = (new System.TimeSpan(p_it.Timecode - p_0.Timecode).TotalMilliseconds);
                 double expected_interval_ms = 1000.0 / config.FrameRatePerSecond;
 
-                long id_counter = start_counter + System.Convert.ToInt64(elapsedtime_ms / expected_interval_ms);
-                p_it.Counter = System.Convert.ToChar(id_counter);
+                p_it.Counter = start_counter + System.Convert.ToInt64(elapsedtime_ms / expected_interval_ms);
             }
 
             for (int it = 1; it < netReader.Buffer.Length; ++it)
@@ -261,7 +309,7 @@ public class StypeGripClient : MonoBehaviour
 
         if (ScreenText != null)
         {
-            ScreenText.text = TimeBetweenFields.ToString("Fields: 0.000") + " " + TimeBetweenFrames.ToString("Frames: 0.000") + " " + buffer_str + " - " + counter_sum;
+            ScreenText.text = buffer_str + " - " + counter_sum;
 
             if (counter_sum != netReader.Buffer.Length - 1)
                 ScreenText.color = Color.red;
@@ -296,9 +344,11 @@ public class StypeGripClient : MonoBehaviour
     }
 
 
+    float chipWidth = 9.59f;
+    float chipHeight = 5.49f;
     // A5 = shif_in_pixels = true
     // HF = shif_in_pixels = false
-    void ApplyDistortion(Camera cam, int field, bool shift_in_pixels)
+    void ApplyDistortionStype(Camera cam, int field, bool shift_in_pixels)
     {
         StypeGripDistortion dist = cam.GetComponent<StypeGripDistortion>();
         if (dist != null)
@@ -321,11 +371,78 @@ public class StypeGripClient : MonoBehaviour
                 dist.CSX = Packet.CenterX;
                 dist.CSY = Packet.CenterY;
             }
-
-            
         }
-        
     }
-    
+
+
+    void ApplyDistortionXcito(Camera cam, int field, bool shift_in_pixels)
+    {
+        XcitoDistortion dist = cam.GetComponent<XcitoDistortion>();
+        var Packet = netReader.Buffer.GetPacket(field);
+
+        if (dist != null)
+        {
+            dist.distParams = new Vector2(Packet.K1, Packet.K2);
+
+            if (shift_in_pixels)
+            {
+                dist.centerShift = new Vector2(
+                    Packet.CenterX / (float)config.ImageWidth * chipWidth,
+                    Packet.CenterY / (float)config.ImageHeight * chipHeight);
+            }
+            else    // shift in mm
+            {
+                dist.centerShift = new Vector2(
+                    Packet.CenterX,
+                    Packet.CenterY);
+            }
+            //dist.texCoordScale = xcito.TexCoordScale;
+        }
+    }
+
+
+    void ApplyCcdShift(Camera cam, int field, bool shift_in_pixels)
+    {
+        Matrix4x4 p = cam.projectionMatrix;
+        if (shift_in_pixels)
+        {
+            p[0, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterX / (float)config.ImageWidth;
+            p[1, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterY / (float)config.ImageHeight;
+        }
+        else // shift in mm
+        {
+            p[0, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterX / chipWidth;
+            p[1, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterY / chipHeight;
+        }
+        cam.projectionMatrix = p;
+    }
+
+
+    void SaveFrame()
+    {
+        StypeCameraParams stype_cam = new StypeCameraParams();
+        stype_cam.fovx = netReader.Buffer.Packet.FovX;
+        stype_cam.fovy = netReader.Buffer.Packet.FovY;
+        stype_cam.centerx = netReader.Buffer.Packet.CenterX;
+        stype_cam.centery = netReader.Buffer.Packet.CenterY;
+        stype_cam.k1 = netReader.Buffer.Packet.K1;
+        stype_cam.k2 = netReader.Buffer.Packet.K2;
+        stype_cam.x = StypePosition.x;
+        stype_cam.y = StypePosition.y;
+        stype_cam.z = StypePosition.z;
+        stype_cam.pan = StypeAngles.y;
+        stype_cam.tilt = StypeAngles.x;
+        stype_cam.roll = StypeAngles.z;
+
+        // Append filename to folder name (format is '0005 shot.png"')
+        string filepng = string.Format("{0:D04}.png", Time.frameCount);
+        string filecam = string.Format("{0:D04}.stypecam", Time.frameCount);
+
+        // Capture the screenshot to the specified file.
+        ScreenCapture.CaptureScreenshot(filepng);
+        stype_cam.Save(filecam);
+    }
+
+
 }
 
