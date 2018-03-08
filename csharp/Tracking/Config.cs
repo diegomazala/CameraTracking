@@ -7,12 +7,12 @@ namespace Tracking
     public class Config
     {
         public string LocalIp = "0.0.0.0";
-        public string RemoteIp = "0.0.0.0";
-        public bool Multicast = false;
-        public int Port = 12000; //6301;
+        public string RemoteIp = "224.0.0.2";
+        public bool Multicast = true;
+        public int Port = 6302;
         public int Delay = 0;
-        public int ReadIntervalMs = 10;
-        public bool ConsumeWhileAvailable = true;
+        public int ReadIntervalMs = 0;
+        public bool ConsumeWhileAvailable = false;
         public float FrameRatePerSecond = 59.94f;
 
         public static string FileName = "Tracking.json";

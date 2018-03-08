@@ -8,6 +8,38 @@ using System.Net.Sockets;
 //using StypeGripPacket = Tracking.StypeGrip.PacketHF;
 using StypeGripPacket = Tracking.StypeGrip.PacketA5;
 
+[System.Serializable]
+public class StypeCameraParams
+{
+    public float x;
+    public float y;
+    public float z;
+    public float pan;
+    public float tilt;
+    public float roll;
+    public float fovx;
+    public float fovy;
+    public float focus;
+    public float k1;
+    public float k2;
+    public float centerx;
+    public float centery;
+
+
+    public void Save(string filename)
+    {
+        bool prettyPrint = true;
+        string json_str = UnityEngine.JsonUtility.ToJson(this, prettyPrint);
+        System.IO.File.WriteAllText(filename, json_str);
+    }
+
+    public void Load(string filename)
+    {
+        string json_str = System.IO.File.ReadAllText(filename);
+        if (json_str.Length > 0)
+            UnityEngine.JsonUtility.FromJsonOverwrite(json_str, this);
+    }
+}
 
 public class StypeGripCalibrationTest : MonoBehaviour
 {

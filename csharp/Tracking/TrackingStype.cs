@@ -13,8 +13,8 @@ public class TrackingApp
         System.Console.WriteLine("---------------------------------------------------");
         System.Console.WriteLine("Counter: {0}", packet.Counter);
         System.Console.WriteLine("Time   : {0}", new TimeSpan(packet.Timecode).ToString());
-        System.Console.WriteLine("Pos    : {0}, {1}, {2}", packet.XYZ[0], packet.XYZ[1], packet.XYZ[2]);
-        System.Console.WriteLine("Rot    : {0}, {1}, {2}", packet.PTR[0], packet.PTR[1], packet.PTR[2]);
+        System.Console.WriteLine("Pos    : {0}, {1}, {2}", packet.Position.x, packet.Position.y, packet.Position.z);
+        System.Console.WriteLine("Rot    : {0}, {1}, {2}", packet.EulerAngles.x, packet.EulerAngles.y, packet.EulerAngles.z);
         System.Console.WriteLine("Fov    : {0} {1}", packet.FovX, packet.FovY);
         System.Console.WriteLine("Zoom   : {0}", packet.Zoom);
         System.Console.WriteLine("Focus  : {0}", packet.Focus);
@@ -25,13 +25,11 @@ public class TrackingApp
 
     public static void PrintStats(Tracking.RingBuffer<StypeGripPacket> ringBuffer)
     {
-        System.Console.WriteLine("---------------------------------------------------");
-        System.Console.WriteLine("Time   : {0}", DateTime.Now);
-        System.Console.WriteLine("Drops  : {0}", ringBuffer.Drops);
-        System.Console.Write("Buffer :");
+        System.Console.Write("\nTime   : {0}", new TimeSpan(ringBuffer.Packet.Timecode).ToString());
+        System.Console.Write(" Drops  : {0}", ringBuffer.Drops);
+        System.Console.Write(" Buffer :");
         for (int i = 0; i < ringBuffer.Length; ++i)
             System.Console.Write(" {0}", ringBuffer.Data[i].Counter);
-        System.Console.WriteLine("\n---------------------------------------------------");
     }
 
     public static void PrintConfig(Tracking.StypeGrip.Config config)
@@ -69,7 +67,7 @@ public class TrackingApp
         config.Multicast = true;
         config.Port = 6302;
         config.Delay = 0;
-        config.ReadIntervalMs = 10;
+        config.ReadIntervalMs = 0;
         config.ConsumeWhileAvailable = false;
 
         if (args.Length > 1)
@@ -98,9 +96,7 @@ public class TrackingApp
         netReader.Connect(config, ringBuffer);
         ringBuffer.ResetDrops();
 
-
         PrintHelp();
-
 
         bool exit = false;
         bool continuous_print = false;
@@ -141,8 +137,8 @@ public class TrackingApp
             }
             else if (continuous_print)
             {
-                //PrintStats(ringBuffer);
-                PrintData(ringBuffer.Packet);
+                PrintStats(ringBuffer);
+                //PrintData(ringBuffer.Packet);
                 //System.Console.WriteLine("Time   : {0}", new TimeSpan(ringBuffer.Packet.Timecode).ToString());
             }
 #if false

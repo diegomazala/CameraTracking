@@ -185,7 +185,6 @@ namespace Tracking
                 lock (threadLocked)
                 {
                     threadRunning = true;
-                    TotalCounter = 0;
                 }
 
                 //
@@ -231,15 +230,6 @@ namespace Tracking
                     lock (threadLocked)
                     {
                         Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
-                        TotalCounter++;
-
-                        //System.Console.WriteLine(" ===========================> {0}", received_data.Length);
-                        //string[] words = ASCIIEncoding.ASCII.GetString(received_data, 0, received_data.Length).Split(' ');
-                        ////string[] words = ASCIIEncoding.ASCII.GetString(received_data, 9, received_data.Length - 9).Split(' ');
-                        //for (int i = 0; i < words.Length; ++i)
-                        //{
-                        //    System.Console.WriteLine("{0} - {1}", i, words[i]);
-                        //}
                     }
 
 
@@ -278,7 +268,6 @@ namespace Tracking
                     if (isRightHost && isRightPort && data.Length > 0)
                     {
                         Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), data));
-                        TotalCounter++;
                     }
 
                     // Restart listening for udp data packages

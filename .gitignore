@@ -37,3 +37,4 @@ cpp/Mrmc/msvc/tmp/
 cpp/Mrmc/msvc/bin/
 unity/unity.csproj
 unity/unity.Editor.csproj
+csharp/Tracking/.vs/

@@ -15,6 +15,7 @@ namespace Tracking
             public float ImageScale = 1.0f;   // Oversize image to compensate distortion
             public int ImageWidth = 1920;
             public int ImageHeight = 1080;
+            public bool LogToFile = false;
 
             public Config()
             {

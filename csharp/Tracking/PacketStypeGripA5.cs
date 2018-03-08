@@ -57,6 +57,8 @@ namespace Tracking
                 System.Array.Copy(packet_data, data, packet_data.Length);
 
                 Timecode = System.DateTime.Now.Ticks;
+
+                //System.Console.WriteLine("Time   : {0}", new System.TimeSpan(Timecode).ToString());
             }
 
 
@@ -66,6 +68,10 @@ namespace Tracking
                 set
                 {
                     System.Array.Copy(value, data, value.Length);
+                }
+                get
+                {
+                    return data;
                 }
             }
 
@@ -103,45 +109,25 @@ namespace Tracking
             {
                 get
                 {
+                    // invert z axis
                     return new UnityEngine.Vector3(
                         System.BitConverter.ToSingle(data, DataIndex.X),
                         System.BitConverter.ToSingle(data, DataIndex.Y),
-                        System.BitConverter.ToSingle(data, DataIndex.Z));
+                        -System.BitConverter.ToSingle(data, DataIndex.Z));
                 }
             }
 
-            public float[] XYZ
-            {
-                get
-                {
-                    return new float[]{
-                        System.BitConverter.ToSingle(data, DataIndex.X),
-                        System.BitConverter.ToSingle(data, DataIndex.Y),
-                        System.BitConverter.ToSingle(data, DataIndex.Z)};
-                }
-            }
-
-            
-            public float[] PTR
-            {
-                get
-                {
-                    return new float[]{
-                        System.BitConverter.ToSingle(data, DataIndex.Pan),
-                        System.BitConverter.ToSingle(data, DataIndex.Tilt),
-                        System.BitConverter.ToSingle(data, DataIndex.Roll)};
-                }
-            }
 
             // Rotation (pan, tilt, roll) in euler angles
             public UnityEngine.Vector3 EulerAngles
             {
                 get
                 {
-                    return new UnityEngine.Vector3(
-                        System.BitConverter.ToSingle(data, DataIndex.Tilt),
-                        System.BitConverter.ToSingle(data, DataIndex.Pan),
-                        System.BitConverter.ToSingle(data, DataIndex.Roll));
+                    return ConvertRotationToUnity(
+                       System.BitConverter.ToSingle(data, DataIndex.Pan),
+                       System.BitConverter.ToSingle(data, DataIndex.Tilt),
+                       System.BitConverter.ToSingle(data, DataIndex.Roll)
+                       ).eulerAngles;
                 }
             }
 
@@ -151,8 +137,22 @@ namespace Tracking
             {
                 get
                 {
-                    return UnityEngine.Quaternion.Euler(EulerAngles);
+                    return ConvertRotationToUnity(
+                        System.BitConverter.ToSingle(data, DataIndex.Pan),
+                        System.BitConverter.ToSingle(data, DataIndex.Tilt),
+                        System.BitConverter.ToSingle(data, DataIndex.Roll)
+                        );
                 }
+            }
+
+
+            static public UnityEngine.Quaternion ConvertRotationToUnity(float pan, float tilt, float roll)
+            {
+                // invert tilt angle
+                UnityEngine.Quaternion x = UnityEngine.Quaternion.AngleAxis(-tilt, UnityEngine.Vector3.right);
+                UnityEngine.Quaternion y = UnityEngine.Quaternion.AngleAxis(pan, UnityEngine.Vector3.up);
+                UnityEngine.Quaternion z = UnityEngine.Quaternion.AngleAxis(roll, UnityEngine.Vector3.forward);
+                return y * x * z;
             }
 
 
@@ -254,6 +254,26 @@ namespace Tracking
 
                     return (check == Checksum);
                 }
+            }
+
+            public override string ToString()
+            {
+                return
+                    this.Counter + ' ' + this.Timecode + '\n' +
+                    this.Position.ToString() + '\n' + this.Rotation.eulerAngles.ToString() + '\n' +
+                    this.FovX + ' ' + this.FovY + ' ' + this.Focus + '\n' +
+                    this.CenterX + ' ' + this.CenterY + '\n' +
+                    this.K1 + ' ' + this.K2;
+            }
+
+            public void Save(string filename)
+            {
+                System.IO.File.WriteAllBytes(filename, data);
+            }
+
+            public void Load(string filename)
+            {
+                data = System.IO.File.ReadAllBytes(filename);
             }
         };
 

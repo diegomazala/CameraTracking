@@ -59,6 +59,7 @@ namespace Tracking
                     data[DataIndex.ChipWidth + i] = chip_width[i];
 
                 Timecode = System.DateTime.Now.Ticks;
+                
             }
 
 
@@ -68,6 +69,8 @@ namespace Tracking
                 System.Array.Copy(packet_data, data, packet_data.Length);
 
                 Timecode = System.DateTime.Now.Ticks;
+
+                //System.Console.WriteLine("Time   : {0}", new System.TimeSpan(Timecode).ToString());
             }
 
 
@@ -77,6 +80,10 @@ namespace Tracking
                 set
                 {
                     System.Array.Copy(value, data, value.Length);
+                }
+                get
+                {
+                    return data;
                 }
             }
 
@@ -108,7 +115,6 @@ namespace Tracking
                 {
                     //byte[] time = { 0, data[DataIndex.Timecode], data[DataIndex.Timecode + 1], data[DataIndex.Timecode + 2] };
                     //_TimeCode = System.Convert.ToInt64(System.BitConverter.ToInt32(time, 0));
-                    //return System.Convert.ToInt64(System.BitConverter.ToInt32(time, 0));
                     return _TimeCode;
                 }
 
@@ -131,66 +137,50 @@ namespace Tracking
             {
                 get
                 {
+                    // invert z axis
                     return new UnityEngine.Vector3(
                         System.BitConverter.ToSingle(data, DataIndex.X),
                         System.BitConverter.ToSingle(data, DataIndex.Y),
-                        -System.BitConverter.ToSingle(data, DataIndex.Z));  // invert z
-                }
-            }
-
-            public float[] XYZ
-            {
-                get
-                {
-                    return new float[]{
-                        System.BitConverter.ToSingle(data, DataIndex.X),
-                        System.BitConverter.ToSingle(data, DataIndex.Y),
-                        -System.BitConverter.ToSingle(data, DataIndex.Z)};  // invert z
+                        System.BitConverter.ToSingle(data, DataIndex.Z));
                 }
             }
 
 
-            // Rotation (tilt, pan, roll) in euler angles
+            // Rotation (pan, tilt, roll) in euler angles
             public UnityEngine.Vector3 EulerAngles
             {
                 get
                 {
-                    return new UnityEngine.Vector3(
-                        System.BitConverter.ToSingle(data, DataIndex.Tilt),
-                        -System.BitConverter.ToSingle(data, DataIndex.Pan),  // invert pan
-                        System.BitConverter.ToSingle(data, DataIndex.Roll));
+                    return ConvertRotationToUnity(
+                       System.BitConverter.ToSingle(data, DataIndex.Pan),
+                       System.BitConverter.ToSingle(data, DataIndex.Tilt),
+                       System.BitConverter.ToSingle(data, DataIndex.Roll)
+                       ).eulerAngles;
                 }
             }
 
-            public float[] PTR
-            {
-                get
-                {
-                    return new float[]
-                    {
-                        -System.BitConverter.ToSingle(data, DataIndex.Pan),
-                        System.BitConverter.ToSingle(data, DataIndex.Tilt),
-                        System.BitConverter.ToSingle(data, DataIndex.Roll)
-                    };
-                }
-            }
 
             // Rotation (pan, tilt, roll)
             public UnityEngine.Quaternion Rotation
             {
                 get
                 {
-                    float pan = -System.BitConverter.ToSingle(data, DataIndex.Pan); // invert pan 
-                    float tilt = System.BitConverter.ToSingle(data, DataIndex.Tilt);
-                    float roll = System.BitConverter.ToSingle(data, DataIndex.Roll);
-                    UnityEngine.Quaternion x = UnityEngine.Quaternion.AngleAxis(tilt, UnityEngine.Vector3.right);
-                    UnityEngine.Quaternion y = UnityEngine.Quaternion.AngleAxis(pan, UnityEngine.Vector3.up);
-                    UnityEngine.Quaternion z = UnityEngine.Quaternion.AngleAxis(roll, UnityEngine.Vector3.forward);
-
-                    // This is not the default rotation order in unity
-                    // Pan * Tilt * Roll
-                    return y * x * z;
+                    return ConvertRotationToUnity(
+                        System.BitConverter.ToSingle(data, DataIndex.Pan),
+                        System.BitConverter.ToSingle(data, DataIndex.Tilt),
+                        System.BitConverter.ToSingle(data, DataIndex.Roll)
+                        );
                 }
+            }
+
+
+            static public UnityEngine.Quaternion ConvertRotationToUnity(float pan, float tilt, float roll)
+            {
+                // invert tilt angle
+                UnityEngine.Quaternion x = UnityEngine.Quaternion.AngleAxis(-tilt, UnityEngine.Vector3.right);
+                UnityEngine.Quaternion y = UnityEngine.Quaternion.AngleAxis(pan, UnityEngine.Vector3.up);
+                UnityEngine.Quaternion z = UnityEngine.Quaternion.AngleAxis(roll, UnityEngine.Vector3.forward);
+                return y * x * z;
             }
 
 
@@ -298,10 +288,23 @@ namespace Tracking
             {
                 return 
                     this.Counter + ' ' + this.Timecode + '\n' +
-                    this.Position.ToString() + '\n' + this.Rotation.ToString() + '\n' +
+                    this.Position.ToString() + '\n' + this.Rotation.eulerAngles.ToString() + '\n' +
                     this.Zoom + ' ' + this.Focus + '\n' +
-                    this.K1 + ' ' + this.K2;
+                    this.FovX + ' ' + this.AspectRatio + '\n' +
+                    this.CenterX + ' ' + this.CenterY + '\n' +
+                    this.ChipWidth + ' ' + this.K1 + ' ' + this.K2;
             }
+
+            public void Save(string filename)
+            {
+                System.IO.File.WriteAllBytes(filename, data);
+            }
+
+            public void Load(string filename)
+            {
+                data = System.IO.File.ReadAllBytes(filename);
+            }
+
         };
 
 

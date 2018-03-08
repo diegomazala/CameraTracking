@@ -23,7 +23,6 @@ namespace Tracking
                 lock (threadLocked)
                 {
                     threadRunning = true;
-                    TotalCounter = 0;
                 }
 
                 //
@@ -60,28 +59,19 @@ namespace Tracking
                         received_data = client.Receive(ref receivedEP);
                     }
 
-                    bool isRightHost = (remoteEP.Address.Equals(receivedEP.Address)) || remoteEP.Address.Equals(IPAddress.Any);
-                    bool isRightPort = (remoteEP.Port == receivedEP.Port) || remoteEP.Port == 0;
+                    if (!Config.Multicast)
+                    {
+                        bool isRightHost = (remoteEP.Address.Equals(receivedEP.Address)) || remoteEP.Address.Equals(IPAddress.Any);
+                        bool isRightPort = (remoteEP.Port == receivedEP.Port) || remoteEP.Port == 0;
 
-                    //if (!isRightHost || !isRightPort)
-                    //    continue;
+                        if (!isRightHost || !isRightPort)
+                            continue;
+                    }
 
                     lock (threadLocked)
                     {
-                        
                         Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
-                        TotalCounter++;
-
-                        //System.Console.WriteLine(" ===========================> {0}", received_data.Length);
-                        //string[] words = ASCIIEncoding.ASCII.GetString(received_data, 0, received_data.Length).Split(' ');
-                        //string[] words = ASCIIEncoding.ASCII.GetString(received_data, 9, received_data.Length - 9).Split(' ');
-                        //for (int i = 0; i < words.Length; ++i)
-                        //{
-                        //    System.Console.WriteLine("{0} - {1}", i, words[i]);
-                        //}
                     }
-
-
                 }
             }
         }
@@ -117,7 +107,6 @@ namespace Tracking
                     if (isRightHost && isRightPort)
                     {
                         Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), data));
-                        TotalCounter++;
                     }
 
                     // Restart listening for udp data packages
@@ -147,9 +136,6 @@ namespace Tracking
                 Thread.Sleep(50);
                 Buffer.ResetDrops();
             }
-
-            
-
         }
     }   // end StypeGrip namespace
 

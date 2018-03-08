@@ -1,8 +1,8 @@
 using UnityEngine;
 using System.Collections;
 
-//using StypeGripPacket = Tracking.StypeGrip.PacketHF;
-using StypeGripPacket = Tracking.StypeGrip.PacketA5;
+using StypeGripPacket = Tracking.StypeGrip.PacketHF;
+//using StypeGripPacket = Tracking.StypeGrip.PacketA5;
 
 public class StypeGripClientUI : MonoBehaviour
 {

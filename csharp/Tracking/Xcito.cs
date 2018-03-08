@@ -36,7 +36,6 @@ namespace Tracking
                 lock (threadLocked)
                 {
                     threadRunning = true;
-                    TotalCounter = 0;
                 }
 
                 //
@@ -92,7 +91,6 @@ namespace Tracking
                     {
                         
                         Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
-                        TotalCounter++;
 
                         //System.Console.WriteLine(" ===========================> {0}", received_data.Length);
                         //string[] words = ASCIIEncoding.ASCII.GetString(received_data, 0, received_data.Length).Split(' ');
@@ -150,7 +148,6 @@ namespace Tracking
                             System.Console.WriteLine("Unknown Format/Encoding");
                         }
 
-                        TotalCounter++;
                     }
 
                     // Restart listening for udp data packages

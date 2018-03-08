@@ -8,10 +8,6 @@ namespace Tracking
     [System.Serializable]
     public abstract class INetReader<T>
     {
-        public int PackageSize = 0;
-        public int PackageAccum = 0;
-        public int TotalCounter = 0;
-
         protected IPEndPoint localEP = null;
         protected IPEndPoint remoteEP = null;
         protected UdpClient client = null;
@@ -38,8 +34,6 @@ namespace Tracking
             if (received_data.Length > 0)
             {
                 Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
-                PackageSize = received_data.Length;
-                TotalCounter++;
             }
         }
     }
@@ -150,7 +144,6 @@ namespace Tracking
             lock (threadLocked)
             {
                 threadRunning = true;
-                TotalCounter = 0;
             }
 
             Buffer.ResetDrops();

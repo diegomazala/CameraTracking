@@ -80,8 +80,6 @@ public class MrmcClient : MonoBehaviour
         if (netReader.IsReading)
             UpdateCameras();
 
-        PackSize = netReader.PackageSize;
-        PackCount = netReader.TotalCounter;
     }
 
 
