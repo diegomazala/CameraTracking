@@ -105,8 +105,6 @@ public class StypeGripClient : MonoBehaviour
 
         logWriter = new LogWriter.LogWriter("", "Stype_", ".log");
         logWriter.WriteToLog(System.DateTime.Now.ToString("yyyyMMdd_HHmmss", System.Globalization.CultureInfo.InvariantCulture));
-
-        Application.targetFrameRate = 60;
     }
 
 
