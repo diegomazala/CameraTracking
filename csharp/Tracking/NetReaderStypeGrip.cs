@@ -20,39 +20,26 @@ namespace Tracking
                 bool consume_while_available = Config.ConsumeWhileAvailable;
                 int read_interval_ms = Config.ReadIntervalMs;
 
+                threadRunning = true;
+
                 lock (threadLocked)
                 {
-                    threadRunning = true;
+                    Buffer.ResetDrops();
                 }
 
-                //
-                // Receive the very first packages in order to reset the counters
-                // 
-                byte[] received_data = client.Receive(ref receivedEP);
-
-
-                if (received_data.Length == PacketHF.DataIndex.Total 
-                    || received_data.Length == PacketA5.DataIndex.Total)    //  Is a valid packet
-                {
-                    Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
-                }
-                else
-                {
-                    System.Console.WriteLine("Unknown Format/Encoding");
-                }
-
-
-                Buffer.ResetDrops();
-
+#if false   // measuring time
+                var last = System.DateTime.Now.Ticks;
+#endif
                 while (threadRunning)
                 {
                     if (read_interval_ms > 0)
                         Thread.Sleep(read_interval_ms);
 
-                    if (client.Available < 1)
-                        continue;
+                    byte[] received_data = client.Receive(ref receivedEP);
 
-                    received_data = client.Receive(ref receivedEP);
+#if false   // measuring time
+                    var now = System.DateTime.Now.Ticks;
+#endif
 
                     while (consume_while_available && client.Available > 0)
                     {
@@ -70,8 +57,18 @@ namespace Tracking
 
                     lock (threadLocked)
                     {
-                        Buffer.Insert((T)System.Activator.CreateInstance(typeof(T), received_data));
+                        OnReceiveData(received_data);
                     }
+
+#if false   // measuring time
+                    long elapsedTicks = now - last;
+                    System.TimeSpan elapsedSpan = new System.TimeSpan(elapsedTicks);
+                    if (elapsedSpan.Milliseconds > 20)
+                        System.Console.WriteLine("   {0:N0} nanoseconds", elapsedTicks * 100);
+                    //System.Console.WriteLine("   {0:N1} milliseconds", elapsedSpan.Milliseconds);
+
+                    last = now;
+#endif
                 }
             }
         }

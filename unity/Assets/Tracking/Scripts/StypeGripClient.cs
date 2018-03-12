@@ -13,6 +13,7 @@ using StypeGripPacket = Tracking.StypeGrip.PacketHF;
 public class StypeGripClient : MonoBehaviour
 {
     public Camera[] TargetCamera = { null, null };
+    private StypeGripPacket[] Packets = { null, null };
 
     public Tracking.StypeGrip.Config config;
     private Tracking.RingBuffer<StypeGripPacket> ringBuffer;
@@ -21,9 +22,8 @@ public class StypeGripClient : MonoBehaviour
     private LogWriter.LogWriter logWriter = null;
 
     private long lastFrameTimecode = 0;
-    private float TimeBetweenFields = 0;
-    private float TimeBetweenFrames = 0;
-
+    public int DropCountBetweenFields = 0;
+    public int DropCountBetweenFrames = 0;
 
     private StypeGripClientUI stypeClientUI = null;
     public StypeGripClientUI UI
@@ -146,14 +146,19 @@ public class StypeGripClient : MonoBehaviour
         netReader.Connect(config, ringBuffer);
         ringBuffer.ResetDrops();
 
+        Packets = new StypeGripPacket[TargetCamera.Length];
+
         for (int field = 0; field < TargetCamera.Length; ++field)
         {
             Camera cam = TargetCamera[field];
             StypeGripDistortion dist = cam.GetComponent<StypeGripDistortion>();
             if (dist != null)
                 dist.Oversize = config.ImageScale;
+
+            Packets[field] = new StypeGripPacket();
         }
 
+        
     }
 
 
@@ -171,12 +176,15 @@ public class StypeGripClient : MonoBehaviour
         //
         // Log to file if a drop happened
         //
-        int drop_count_in = CheckDropInBuffer();
-        int drop_count_between = CheckDropBetweenBuffers();
-        if (drop_count_in > 0 || drop_count_between > 0)
+        int drop_count_betwenn_fields = CheckDropBetweenFields(); // CheckDropInBuffer();
+        int drop_count_between_frames = CheckDropBetweenFrames(); // CheckDropBetweenBuffers();
+        if (drop_count_betwenn_fields > 0 || drop_count_between_frames > 0)
         {
-            logWriter.WriteToLog("Drop Fields : " + drop_count_in.ToString() + ' ' + drop_count_between);
+            logWriter.WriteToLog("Drop Fields : " + drop_count_betwenn_fields.ToString() + ' ' + drop_count_between_frames);
             LogBuffer();
+
+            DropCountBetweenFields += drop_count_betwenn_fields;
+            DropCountBetweenFrames += drop_count_between_frames;
         }
         //
         // Log if config ask to 
@@ -188,7 +196,7 @@ public class StypeGripClient : MonoBehaviour
         //
         // Save a snapshot
         //
-        if (Input.GetKeyDown(KeyCode.S))
+        if (Input.GetKeyDown(KeyCode.S) && Input.GetKey(KeyCode.LeftControl))
         {
             SaveFrame();
         }
@@ -196,9 +204,8 @@ public class StypeGripClient : MonoBehaviour
         //
         // Get the timecode of the last packet in the buffer
         //
-        lastFrameTimecode = netReader.Buffer.LastPacket.Timecode;
+        lastFrameTimecode = Packets[0].Timecode;//netReader.Buffer.LastPacket.Timecode;
     }
-
 
 
     void UpdateCameras()
@@ -206,7 +213,7 @@ public class StypeGripClient : MonoBehaviour
         for (int field = 0; field < TargetCamera.Length; ++field)
         {
             Camera cam = TargetCamera[field];
-            StypeGripPacket Packet = netReader.Buffer.GetPacket(field);
+            StypeGripPacket Packet = Packets[field] = netReader.Buffer.GetPacket(field);
 
             cam.ResetProjectionMatrix();
             cam.ResetWorldToCameraMatrix();
@@ -237,7 +244,7 @@ public class StypeGripClient : MonoBehaviour
         StypeGripDistortion dist = cam.GetComponent<StypeGripDistortion>();
         if (dist != null)
         {
-            var Packet = netReader.Buffer.GetPacket(field);
+            var Packet = Packets[field];
 
             dist.PA_w = Packet.ChipWidth;
             dist.AR = Packet.AspectRatio;
@@ -265,7 +272,7 @@ public class StypeGripClient : MonoBehaviour
     void ApplyDistortionXcito(Camera cam, int field, bool shift_in_pixels)
     {
         XcitoDistortion dist = cam.GetComponent<XcitoDistortion>();
-        var Packet = netReader.Buffer.GetPacket(field);
+        var Packet = Packets[field];
 
         if (dist != null)
         {
@@ -293,17 +300,17 @@ public class StypeGripClient : MonoBehaviour
 
     void ApplyCcdShift(Camera cam, int field, bool shift_in_pixels)
     {
-        var Packet = netReader.Buffer.GetPacket(field);
+        var Packet = Packets[field];
         Matrix4x4 p = cam.projectionMatrix;
         if (shift_in_pixels)
         {
-            p[0, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterX / (float)config.ImageWidth;
-            p[1, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterY / (float)config.ImageHeight;
+            p[0, 2] = 2.0f * Packet.CenterX / (float)config.ImageWidth;
+            p[1, 2] = 2.0f * Packet.CenterY / (float)config.ImageHeight;
         }
         else // shift in mm
         {
-            p[0, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterX / Packet.ChipWidth;
-            p[1, 2] = 2.0f * netReader.Buffer.GetPacket(field).CenterY / Packet.ChipHeight;
+            p[0, 2] = 2.0f * Packet.CenterX / Packet.ChipWidth;
+            p[1, 2] = 2.0f * Packet.CenterY / Packet.ChipHeight;
         }
         cam.projectionMatrix = p;
     }
@@ -339,6 +346,27 @@ public class StypeGripClient : MonoBehaviour
             return 0;
     }
 
+    int CheckDropBetweenFields()
+    {
+        double elapsedtime_ms = (new System.TimeSpan(Packets[1].Timecode - Packets[0].Timecode).TotalMilliseconds);
+        double expected_interval_ms = 1000.0 / config.FrameRatePerSecond;
+
+        if (elapsedtime_ms > expected_interval_ms * 2)
+            return (int)(elapsedtime_ms / expected_interval_ms);
+        else
+            return 0;
+    }
+
+    int CheckDropBetweenFrames()
+    {
+        double elapsedtime_ms = (new System.TimeSpan(Packets[0].Timecode - lastFrameTimecode).TotalMilliseconds);
+        double expected_interval_ms = 1000.0 / config.FrameRatePerSecond;
+
+        if (elapsedtime_ms > expected_interval_ms * 2)
+            return (int)(elapsedtime_ms / expected_interval_ms);
+        else
+            return 0;
+    }
 
     void LogBuffer()
     {
