@@ -6,6 +6,7 @@ namespace Tracking
 {
     public class Config
     {
+        public bool Enabled = true;
         public string LocalIp = "0.0.0.0";
         public string RemoteIp = "224.0.0.2";
         public bool Multicast = true;

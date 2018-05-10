@@ -133,6 +133,12 @@ public class StypeGripClient : MonoBehaviour
         }
 #endif
 
+        if (!config.Enabled)
+        {
+            enabled = false;
+            return;
+        }
+
         foreach (Camera c in TargetCamera)
         {
             if (c == null)
