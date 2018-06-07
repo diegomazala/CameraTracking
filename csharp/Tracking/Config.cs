@@ -15,6 +15,8 @@ namespace Tracking
         public int ReadIntervalMs = 0;
         public bool ConsumeWhileAvailable = false;
         public float FrameRatePerSecond = 59.94f;
+        public bool Interlaced = false;
+        public bool InvertFields = false;
 
         public static string FileName = "Tracking.json";
         
