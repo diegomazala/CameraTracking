@@ -1,20 +1,9 @@
-#ifndef __STYPE_PACKET_HF__
-#define __STYPE_PACKET_HF__
+#pragma once
 
 #include <fstream>
 #include <vector>
 #include <algorithm>
 
-template <typename T>
-class Property 
-{
-public:
-	virtual ~Property() {}
-	virtual T & operator = (const T &f) { return value = f; }
-	virtual operator T const & () const { return value; }
-protected:
-	T value;
-};
 
 namespace stype
 {
@@ -176,4 +165,3 @@ namespace stype
 	
 }
 
-#endif // __STYPE_PACKET_HF__

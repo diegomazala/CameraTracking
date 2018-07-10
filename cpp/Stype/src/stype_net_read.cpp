@@ -6,7 +6,9 @@
 #include <mutex>
 #include <conio.h> 
 
+#include "config.h"	
 #include "stype.h"	
+
 
 class udp_client
 {
@@ -59,14 +61,13 @@ void run_udp_client(uint16_t port)
 	io_service.run();
 }
 
-
 int main(int argc, char* argv[])
 {
-	uint16_t port = 10002;
-	if (argc > 1)
-		port = std::atoi(argv[1]);
 
-	std::thread udp_receive_thread(run_udp_client, port);
+	stype::config config;
+	config.load((argc > 1) ? argv[1] : "../data/stype.config");
+
+	std::thread udp_receive_thread(run_udp_client, config.port);
 	
 	while (getch() != 27) {}	// wait for escape key
 

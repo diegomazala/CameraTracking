@@ -31,6 +31,7 @@ cpp/Xcito/build/bin/
 cpp/Xcito/build/tmp/
 *.sdf
 *.suo
+*.vs
 unity/unity.sln
 cpp/Mrmc/msvc/mrmc_net.VC.db
 cpp/Mrmc/msvc/tmp/
@@ -38,3 +39,6 @@ cpp/Mrmc/msvc/bin/
 unity/unity.csproj
 unity/unity.Editor.csproj
 csharp/Tracking/.vs/
+cpp/Stype/msvc/mrmc_net.VC.db
+cpp/Stype/msvc/tmp/
+cpp/Stype/msvc/bin/
