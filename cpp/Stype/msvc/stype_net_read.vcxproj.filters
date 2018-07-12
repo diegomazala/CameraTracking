@@ -17,5 +17,11 @@
     <ClInclude Include="..\src\stype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\circular_buffer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

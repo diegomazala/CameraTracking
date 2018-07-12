@@ -1,3 +1,8 @@
+#define _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING 
+#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
+#define WINVER 0x0A00 
+#define _WIN32_WINNT 0x0A00  
+
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/array.hpp>
@@ -69,7 +74,7 @@ int main(int argc, char* argv[])
 
 	std::thread udp_receive_thread(run_udp_client, config.port);
 	
-	while (getch() != 27) {}	// wait for escape key
+	while (_getch() != 27) {}	// wait for escape key
 
 	mutex.lock();
 	{
