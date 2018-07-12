@@ -11,8 +11,15 @@
 #include <mutex>
 #include <conio.h> 
 
+
+#define CATCH_CONFIG_MAIN
+#define JM_CIRCULAR_BUFFER_CXX14
+#include "circular_buffer.hpp"
+
 #include "config.h"	
 #include "stype.h"	
+
+static jm::circular_buffer<stype::packet, 4> packet_buffer;
 
 
 class udp_client
@@ -36,13 +43,23 @@ public:
 	void handle_receive(const boost::system::error_code& error, size_t bytes_transferred)
 	{
 		//std::cout << "\n[" << bytes_transferred << " bytes] received : ";
+		if (bytes_transferred == stype::buffer_index::total)
+		{
+			static std::mutex io_mutex;
+			{
+				std::lock_guard<std::mutex> lk(io_mutex);
+				packet_buffer.push_back({ recv_buffer.data() });
 
-		stype::packet packet(recv_buffer.data());
+				std::cout << "Buffer [" << packet_buffer.size() << "] : ";
+				std::for_each(packet_buffer.begin(), packet_buffer.end(),
+					[](const auto& p) { std::cout << unsigned(p.package_number()) << ' '; });
+				std::cout << std::endl;
 
-		std::cout
-		//	<< std::fixed << packet.timecode()
-			<< ' ' << packet << std::endl;
-
+				//std::cout
+				////	<< std::fixed << packet.timecode()
+				//	<< ' ' << packet << std::endl;
+			}
+		}
 
 		if (!error || error == boost::asio::error::message_size)
 			start_receive();
@@ -51,7 +68,6 @@ private:
 	boost::asio::ip::udp::socket socket;
 	boost::asio::ip::udp::endpoint receiver_endpoint;
 	boost::array<uint8_t, 256> recv_buffer;
-
 };
 
 
