@@ -75,6 +75,11 @@ struct StypeHFPacket
 		is_valid = Checksum(buffer);
 	}
 
+	bool IsValid() const
+	{
+		return is_valid;
+	}
+
 	bool Checksum(uint8_t* buffer) const
 	{
 		uint8_t check = 0;
