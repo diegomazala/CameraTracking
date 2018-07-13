@@ -55,10 +55,14 @@ struct packet_index
 
 struct StypeHFPacket
 {
+	StypeHFPacket() = default;
+
 	StypeHFPacket(uint8_t* buffer)
 	{
 		FromBuffer(buffer);
 	}
+
+	StypeHFPacket& operator=(const StypeHFPacket& other) = default;
 
 	void FromBuffer(uint8_t* buffer)
 	{

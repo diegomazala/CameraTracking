@@ -6,7 +6,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "StypeHFPacket.h"
+
 
 // Sets default values
 AStypeListener::AStypeListener()
@@ -21,29 +21,33 @@ void AStypeListener::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	//
+	// Setup Socket Listener
+	//
 	FIPv4Endpoint Endpoint(FIPv4Address::Any, 6301);
-
+	//
 	ListenSocket = FUdpSocketBuilder(TEXT("StypeSocket"))
 		.AsNonBlocking()
 		.AsReusable()
 		.BoundToEndpoint(Endpoint)
 		.WithReceiveBufferSize(256);
-
+	//
 	int32 SendSize = 256;
-	ListenSocket->SetSendBufferSize(SendSize, SendSize);
 	ListenSocket->SetReceiveBufferSize(SendSize, SendSize);
-
-	FTimespan ThreadWaitTime = FTimespan::FromMilliseconds(100);
-	SocketReceiver = new FUdpSocketReceiver(ListenSocket, ThreadWaitTime, TEXT("UDP SOCKET RECEIVER"));
-	SocketReceiver->OnDataReceived().BindUObject(this, &AStypeListener::Callback);
+	//
+	FTimespan ThreadWaitTime = FTimespan::FromMilliseconds(3);
+	SocketReceiver = new FUdpSocketReceiver(ListenSocket, ThreadWaitTime, TEXT("UDP_SOCKET_RECEIVER"));
+	SocketReceiver->OnDataReceived().BindUObject(this, &AStypeListener::OnReceiveData);
 	SocketReceiver->Start();
 
+
+
 	//
-	// Create Lens Distortion Material
+	// Create Lens Distortion Material and Apply to Camera
 	//
 	LensDistortion = UMaterialInstanceDynamic::Create(LensDistortionParentMaterial, this, FName(TEXT("Lens Distortion Material Dynamic")));
 	LensDistortion->SetFlags(RF_Transient);
-
+	//
 	if (CameraActor)
 	{
 		UActorComponent* actorCam = CameraActor->GetComponentByClass(UCameraComponent::StaticClass());
@@ -62,12 +66,15 @@ void AStypeListener::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	//~~~~~~~~~~~~~~~~
 
-	//Clear all sockets!
-	SocketReceiver->Stop();
-	delete SocketReceiver;
-	SocketReceiver = nullptr;
-
-	//		makes sure repeat plays in Editor dont hold on to old sockets!
+	// Clear all sockets!
+	if (SocketReceiver)
+	{
+		SocketReceiver->Stop();
+		delete SocketReceiver;
+		SocketReceiver = nullptr;
+	}
+	//
+	// makes sure repeat plays in Editor dont hold on to old sockets!
 	if (ListenSocket)
 	{
 		ListenSocket->Close();
@@ -81,6 +88,83 @@ void AStypeListener::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AStypeListener::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+#if 0 /////// for debug purposes
+	//
+	// If SocketReceiver was not initialized, call receive manually
+	//
+	if (!SocketReceiver)
+		DoReceiveData();
+
+
+	//
+	// Print Packet
+	//
+	UE_LOG(LogTemp, Log, TEXT("%d %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"),
+		Packet.package_number(), Packet.timecode(),
+		Packet.x(), Packet.y(), Packet.z(),
+		Packet.pan(), Packet.tilt(), Packet.roll(),
+		Packet.fovx(), Packet.aspect_ratio(),
+		Packet.focus(), Packet.zoom(),
+		Packet.k1(), Packet.k2(),
+		Packet.center_x(), Packet.center_y(),
+		Packet.chip_width()
+	);
+#endif
+
+	if (CameraActor)
+	{
+		CameraActor->SetActorLocation(FVector(Packet.x(), Packet.z(), Packet.y()) * 100.0f);
+		CameraActor->SetActorRotation(FRotator(Packet.tilt(), Packet.pan(), Packet.roll()));
+
+		if (CameraComponent)
+		{
+			CameraComponent->SetAspectRatio(Packet.aspect_ratio());
+			CameraComponent->SetFieldOfView(Packet.fovx());
+		}
+
+		if (LensDistortion)
+		{
+			LensDistortion->SetScalarParameterValue("K1", Packet.k1());
+			LensDistortion->SetScalarParameterValue("K2", Packet.k2());
+			LensDistortion->SetScalarParameterValue("ChipWidth", Packet.chip_width());
+			LensDistortion->SetScalarParameterValue("ChipHeight", Packet.chip_width() / Packet.aspect_ratio());
+			LensDistortion->SetScalarParameterValue("CenterX", Packet.center_x());
+			LensDistortion->SetScalarParameterValue("CenterY", Packet.center_y());
+		}
+	}
+
+}
+
+
+void AStypeListener::OnReceiveData(const FArrayReaderPtr& data, const FIPv4Endpoint&)
+{
+	if (data->TotalSize() == buffer_index::total)
+	{
+		StypeHFPacket recv_packet(data->GetData());
+
+		if (recv_packet.IsValid())
+		{
+			Packet = recv_packet;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Packet is Invalid"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Packet size does not match"));
+	}
+}
+
+//
+// Receive the data when this method is called
+//
+// Note: Do not use FUdpSocketReceiver* SocketReceiver when using this funcition
+//
+void AStypeListener::DoReceiveData()
+{
 
 	TSharedRef<FInternetAddr> targetAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->CreateInternetAddr();
 	TArray<uint8> ReceivedData;
@@ -95,60 +179,18 @@ void AStypeListener::Tick(float DeltaTime)
 
 		ListenSocket->RecvFrom(ReceivedData.GetData(), ReceivedData.Num(), BytesRead, *targetAddr);
 
-		this->OnReceiveData(ReceivedData.GetData(), BytesRead);
-	}
-}
-
-void AStypeListener::OnReceiveData(uint8_t* Data, int32_t BytesRead)
-{
-	if (BytesRead == buffer_index::total)
-	{
-		StypeHFPacket Packet(Data);
-
-		UE_LOG(LogTemp, Warning, TEXT("%d %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d"),
-			Packet.package_number(), Packet.timecode(),
-			Packet.x(), Packet.y(), Packet.z(),
-			Packet.pan(), Packet.tilt(), Packet.roll(),
-			Packet.fovx(), Packet.aspect_ratio(),
-			Packet.focus(), Packet.zoom(),
-			Packet.k1(), Packet.k2(),
-			Packet.center_x(), Packet.center_y(),
-			Packet.chip_width(),
-			this->HasActivePawnControlCameraComponent()
-		);
-
-		if (CameraActor)
+		if (BytesRead == buffer_index::total)
 		{
-			CameraActor->SetActorLocation(FVector(Packet.x(), Packet.z(), Packet.y()) * 100.0f);
-			CameraActor->SetActorRotation(FRotator(Packet.tilt(), Packet.pan(), Packet.roll()));
-
-			if (CameraComponent)
-			{
-				CameraComponent->SetAspectRatio(Packet.aspect_ratio());
-				CameraComponent->SetFieldOfView(Packet.fovx());
-			}
-
-			if (LensDistortion)
-			{
-				LensDistortion->SetScalarParameterValue("K1", Packet.k1());
-				LensDistortion->SetScalarParameterValue("K2", Packet.k2());
-				LensDistortion->SetScalarParameterValue("ChipWidth", Packet.chip_width());
-				LensDistortion->SetScalarParameterValue("ChipHeight", Packet.chip_width() / Packet.aspect_ratio());
-				LensDistortion->SetScalarParameterValue("CenterX", Packet.center_x());
-				LensDistortion->SetScalarParameterValue("CenterY", Packet.center_y());
-			}
+			StypeHFPacket recv_packet(ReceivedData.GetData());
+			if (recv_packet.IsValid())
+				Packet = recv_packet;
+			else
+				UE_LOG(LogTemp, Warning, TEXT("Packet is Invalid"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Packet size does not match"));
 		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Received Buffer not recognized: %d"), BytesRead);
-	}
+
 }
-
-
-void AStypeListener::Callback(const FArrayReaderPtr& data, const FIPv4Endpoint&)
-{
-	const auto encoded = FBase64::Encode(*data);
-	UE_LOG(LogTemp, Log, TEXT("Received: %s"), *encoded);
-}
-

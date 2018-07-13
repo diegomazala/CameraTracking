@@ -6,6 +6,9 @@
 #include "GameFramework/Actor.h"
 #include "Networking.h"
 #include "Runtime/Networking/Public/Interfaces/IPv4/IPv4Address.h"
+
+#include "StypeHFPacket.h"
+
 #include "StypeListener.generated.h"
 
 class UCameraComponent;
@@ -28,14 +31,12 @@ protected:
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+		
+	void OnReceiveData(const FArrayReaderPtr& data, const FIPv4Endpoint&);
+	void DoReceiveData();
 
-	void OnReceiveData(uint8_t* Data, int32_t BytesRead);
-
-
+	FSocket*			ListenSocket;
 	FUdpSocketReceiver* SocketReceiver;
-	void Callback(const FArrayReaderPtr& data, const FIPv4Endpoint&);
-
-	FSocket * ListenSocket;
 
 	//UPROPERTY(EditAnywhere)
 	FIPv4Address LocalIpAddress;
@@ -57,4 +58,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UMaterialInstanceDynamic* LensDistortion = nullptr;
+
+	StypeHFPacket Packet;
 };
