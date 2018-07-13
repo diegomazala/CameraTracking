@@ -8,6 +8,7 @@
 #include "Runtime/Networking/Public/Interfaces/IPv4/IPv4Address.h"
 
 #include "StypeHFPacket.h"
+#include "CircularBuffer.h"
 
 #include "StypeListener.generated.h"
 
@@ -59,5 +60,5 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	UMaterialInstanceDynamic* LensDistortion = nullptr;
 
-	StypeHFPacket Packet;
+	CircularBuffer<StypeHFPacket, 5> PacketBuffer;
 };

@@ -88,30 +88,9 @@ void AStypeListener::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AStypeListener::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	const auto& Packet = PacketBuffer.get();
 	
-#if 0 /////// for debug purposes
-	//
-	// If SocketReceiver was not initialized, call receive manually
-	//
-	if (!SocketReceiver)
-		DoReceiveData();
-
-
-	//
-	// Print Packet
-	//
-	UE_LOG(LogTemp, Log, TEXT("%d %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"),
-		Packet.package_number(), Packet.timecode(),
-		Packet.x(), Packet.y(), Packet.z(),
-		Packet.pan(), Packet.tilt(), Packet.roll(),
-		Packet.fovx(), Packet.aspect_ratio(),
-		Packet.focus(), Packet.zoom(),
-		Packet.k1(), Packet.k2(),
-		Packet.center_x(), Packet.center_y(),
-		Packet.chip_width()
-	);
-#endif
-
 	if (CameraActor)
 	{
 		CameraActor->SetActorLocation(FVector(Packet.x(), Packet.z(), Packet.y()) * 100.0f);
@@ -134,6 +113,39 @@ void AStypeListener::Tick(float DeltaTime)
 		}
 	}
 
+
+#if 0 /////// for debug purposes
+	//
+	// If SocketReceiver was not initialized, call receive manually
+	//
+	if (!SocketReceiver)
+		DoReceiveData();
+
+
+	//
+	// Print Packet
+	//
+
+	UE_LOG(LogTemp, Log, TEXT("%d %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"),
+		Packet.package_number(), Packet.timecode(),
+		Packet.x(), Packet.y(), Packet.z(),
+		Packet.pan(), Packet.tilt(), Packet.roll(),
+		Packet.fovx(), Packet.aspect_ratio(),
+		Packet.focus(), Packet.zoom(),
+		Packet.k1(), Packet.k2(),
+		Packet.center_x(), Packet.center_y(),
+		Packet.chip_width()
+	);
+
+	UE_LOG(LogTemp, Log, TEXT("%d %d %d %d %d"),
+		PacketBuffer[0].package_number(),
+		PacketBuffer[1].package_number(),
+		PacketBuffer[2].package_number(),
+		PacketBuffer[3].package_number(),
+		PacketBuffer[4].package_number());
+#endif
+
+
 }
 
 
@@ -145,7 +157,7 @@ void AStypeListener::OnReceiveData(const FArrayReaderPtr& data, const FIPv4Endpo
 
 		if (recv_packet.IsValid())
 		{
-			Packet = recv_packet;
+			PacketBuffer.put(recv_packet);
 		}
 		else
 		{
@@ -183,7 +195,7 @@ void AStypeListener::DoReceiveData()
 		{
 			StypeHFPacket recv_packet(ReceivedData.GetData());
 			if (recv_packet.IsValid())
-				Packet = recv_packet;
+				PacketBuffer.put(recv_packet);
 			else
 				UE_LOG(LogTemp, Warning, TEXT("Packet is Invalid"));
 		}
