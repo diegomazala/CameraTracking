@@ -52,6 +52,7 @@ SubShader
 			}
 			
   			// http://stackoverflow.com/questions/21615298/opencv-distort-back
+			// https://github.com/Polypulse/LensCalibrator/blob/master/Shaders/Private/DistortionCorrectionMapGeneration.usf
 			// https://github.com/darglein/saiga/blob/master/src/saiga/vision/cameraModel/Distortion.h
 			float2 Distort(float2 uv)
 			{
