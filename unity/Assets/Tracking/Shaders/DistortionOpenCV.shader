@@ -54,6 +54,7 @@ SubShader
   			// http://stackoverflow.com/questions/21615298/opencv-distort-back
 			// https://github.com/Polypulse/LensCalibrator/blob/master/Shaders/Private/DistortionCorrectionMapGeneration.usf
 			// https://github.com/darglein/saiga/blob/master/src/saiga/vision/cameraModel/Distortion.h
+			// https://docs.opencv.org/3.4/da/d54/group__imgproc__transform.html#ga7dfb72c9cf9780a347fbe3d1c47e5d5a
 			float2 Distort(float2 uv)
 			{
 				float inverse = lerp(1, -1, _Inverted);
@@ -78,14 +79,10 @@ SubShader
 				float r4 = r2 * r2;
 				float r6 = r4 * r2;
 				
-				float radial_u = 1.0 + k1 * r2 + k2 * r4 + k3 * r6;
-				float radial_v = 1.0 + k4 * r2 + k5 * r4 + k6 * r6;
+				float radial = (1.0 + k1 * r2 + k2 * r4 + k3 * r6) / (1.0 + k4 * r2 + k5 * r4 + k6 * r6);
 
-				float radial_iv = 1.0 / radial_v;
-				float radial    = radial_u * radial_iv;
-
-				float tangentialX = p1 * _2xy + p2 * (r2 + float(2) * x2);
-				float tangentialY = p1 * (r2 + float(2) * y2) + p2 * _2xy;
+				float tangentialX = p1 * _2xy + p2 * (r2 + 2.0 * x2);
+				float tangentialY = p1 * (r2 + 2.0 * y2) + p2 * _2xy;
 
 				float xd = x * radial + tangentialX;
 				float yd = y * radial + tangentialY;
